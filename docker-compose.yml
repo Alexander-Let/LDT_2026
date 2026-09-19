@@ -1,0 +1,47 @@
+name: finni
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-finni}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finni}
+      POSTGRES_DB: ${POSTGRES_DB:-finni}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  migrate:
+    build: ./backend
+    image: finni-backend:dev
+    command: ["/app/migrate"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-finni}:${POSTGRES_PASSWORD:-finni}@db:5432/${POSTGRES_DB:-finni}?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+
+  server:
+    build: ./backend
+    image: finni-backend:dev
+    environment:
+      HTTP_ADDR: ":8080"
+      DATABASE_URL: postgres://${POSTGRES_USER:-finni}:${POSTGRES_PASSWORD:-finni}@db:5432/${POSTGRES_DB:-finni}?sslmode=disable
+      APP_ENV: ${APP_ENV:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  db-data:
