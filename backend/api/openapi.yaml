@@ -1,0 +1,605 @@
+openapi: 3.0.3
+
+info:
+  title: Питомец Финни — Backend API
+  version: "1.0.0"
+  description: |
+    Опциональный бэкенд local-first приложения по финансовой грамотности
+    для детей 7–11 лет (кейс ЛЦТ 2026).
+
+    **Что делает сервер:**
+    1. Синхронизация игрового профиля между устройствами (`state` + оптимистичная блокировка).
+    2. Доставка версионированного учебного контента.
+    3. Родительский раздел: сводка прогресса ребёнка и бонусные баллы.
+
+    **Приватность.** Персональные данные ребёнка не собираются. Детский
+    профиль анонимен: клиент один раз генерирует случайный `device_token`,
+    на сервере хранится только его SHA-256-хэш. Единственные ПДн в системе —
+    email родителя; согласие на обработку фиксируется (`consent: true`)
+    при первом запросе кода.
+
+    **Аутентификация:**
+    - Детские эндпоинты: `Authorization: Bearer <device_token>`.
+    - Родительские эндпоинты: `Authorization: Bearer <parent_token>`,
+      токен выдаётся после входа по одноразовому коду из email
+      (`POST /v1/parents/otp` → `POST /v1/parents/session`).
+      Отправки писем в прототипе нет: код пишется в лог сервера, а при
+      `APP_ENV=dev` дополнительно возвращается в поле `dev_code` ответа.
+
+    **Ошибки** возвращаются в едином формате:
+    `{"error": {"code": "...", "message": "..."}}`.
+
+servers:
+  - url: http://localhost:8080
+    description: Локальный запуск (docker compose)
+
+tags:
+  - name: health
+    description: Служебные проверки
+  - name: profiles
+    description: Детский профиль и синхронизация состояния
+  - name: content
+    description: Учебный контент
+  - name: parents
+    description: Родительский раздел
+
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: Живость процесса
+      operationId: healthz
+      responses:
+        "200":
+          description: Процесс работает
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+  /readyz:
+    get:
+      tags: [health]
+      summary: Готовность (проверка соединения с БД)
+      operationId: readyz
+      responses:
+        "200":
+          description: БД доступна
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+        "503":
+          description: БД недоступна
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: unavailable }
+
+  /v1/profiles:
+    post:
+      tags: [profiles]
+      summary: Создать детский профиль (идемпотентно)
+      description: |
+        Регистрация устройства. Если SHA-256-хэш `device_token` уже есть в базе,
+        возвращается существующий профиль со статусом 200, иначе создаётся
+        новый — 201. При создании генерируется `link_code` (6 символов,
+        без 0/O/1/I) для привязки родителя.
+      operationId: createProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_token, display_name]
+              properties:
+                device_token:
+                  type: string
+                  minLength: 16
+                  maxLength: 256
+                  description: Случайная строка, сгенерированная клиентом один раз. На сервере хранится только хэш.
+                display_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                  description: Отображаемое имя питомца/профиля (не ПДн).
+            example:
+              device_token: "9f2b7c1e4a8d..."
+              display_name: "Финни"
+      responses:
+        "200":
+          description: Профиль уже существовал
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfileIdentity" }
+        "201":
+          description: Профиль создан
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfileIdentity" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /v1/profiles/me:
+    get:
+      tags: [profiles]
+      summary: Текущий профиль
+      operationId: getMyProfile
+      security: [{ deviceTokenAuth: [] }]
+      responses:
+        "200":
+          description: Данные профиля
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile_id: { type: string, format: uuid }
+                  display_name: { type: string }
+                  link_code: { type: string, example: "K7M2QN" }
+                  state_version: { type: integer, example: 3 }
+                  updated_at: { type: string, format: date-time }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/profiles/me/state:
+    get:
+      tags: [profiles]
+      summary: Игровое состояние
+      operationId: getMyState
+      security: [{ deviceTokenAuth: [] }]
+      responses:
+        "200":
+          description: Состояние и его версия
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfileState" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      tags: [profiles]
+      summary: Сохранить игровое состояние (оптимистичная блокировка)
+      description: |
+        Сохраняет `state`, только если `base_version` совпадает с текущей
+        `state_version` в базе; при успехе версия увеличивается на 1.
+        При расхождении — 409 с актуальными `current_version` и `current_state`,
+        клиент должен выполнить слияние и повторить запрос.
+        `state` — произвольный JSON-объект размером до 256 КБ.
+      operationId: putMyState
+      security: [{ deviceTokenAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state, base_version]
+              properties:
+                state:
+                  type: object
+                  description: Игровое состояние (непрозрачно для сервера).
+                base_version:
+                  type: integer
+                  minimum: 0
+                  description: Версия, на основе которой клиент готовил состояние.
+      responses:
+        "200":
+          description: Сохранено
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfileState" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409":
+          description: Конфликт версий
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+                  - type: object
+                    properties:
+                      current_version: { type: integer, example: 4 }
+                      current_state:
+                        type: object
+                        description: Актуальное состояние из базы.
+
+  /v1/profiles/me/bonuses:
+    get:
+      tags: [profiles]
+      summary: Неприменённые бонусы от родителя
+      operationId: listMyBonuses
+      security: [{ deviceTokenAuth: [] }]
+      responses:
+        "200":
+          description: Список бонусов, ожидающих применения
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PendingBonus" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/profiles/me/bonuses/{id}/applied:
+    post:
+      tags: [profiles]
+      summary: Отметить бонус применённым
+      description: Идемпотентно — повторный вызов возвращает 200. Доступно только для бонусов собственного профиля.
+      operationId: applyMyBonus
+      security: [{ deviceTokenAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Бонус применён (или был применён ранее)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bonus" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/content/bundle:
+    get:
+      tags: [content]
+      summary: Последний бандл учебного контента
+      description: Клиент сравнивает `version` со своей локальной копией и применяет бандл, если версия новее.
+      operationId: getContentBundle
+      security: [{ deviceTokenAuth: [] }]
+      responses:
+        "200":
+          description: Бандл контента
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContentBundle" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/parents/otp:
+    post:
+      tags: [parents]
+      summary: Запросить одноразовый код (вход родителя)
+      description: |
+        Создаёт запись родителя при первом обращении (фиксируется `consent_at`).
+        Код действует 10 минут; повторный запрос перезаписывает предыдущий.
+        **Отправки email нет**: код пишется в лог сервера, а при `APP_ENV=dev`
+        дополнительно возвращается в поле `dev_code`.
+      operationId: requestParentOTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, consent]
+              properties:
+                email: { type: string, format: email }
+                consent:
+                  type: boolean
+                  enum: [true]
+                  description: Согласие на обработку персональных данных (обязательно).
+            example:
+              email: "mama@example.com"
+              consent: true
+      responses:
+        "200":
+          description: Код создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expires_at: { type: string, format: date-time }
+                  dev_code:
+                    type: string
+                    description: Только при APP_ENV=dev.
+                    example: "123456"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /v1/parents/session:
+    post:
+      tags: [parents]
+      summary: Обменять код на токен сессии
+      description: Успешный обмен удаляет использованный код. Токен сессии живёт 30 дней; в базе хранится только его хэш.
+      operationId: createParentSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email: { type: string, format: email }
+                code: { type: string, pattern: "^[0-9]{6}$" }
+      responses:
+        "201":
+          description: Сессия создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parent_token: { type: string }
+                  expires_at: { type: string, format: date-time }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/parents/links:
+    post:
+      tags: [parents]
+      summary: Привязать профиль ребёнка по link_code
+      description: Идемпотентно — повторная привязка возвращает 200. Код сравнивается без учёта регистра.
+      operationId: createParentLink
+      security: [{ parentTokenAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [link_code]
+              properties:
+                link_code: { type: string, minLength: 6, maxLength: 6, example: "K7M2QN" }
+      responses:
+        "200":
+          description: Профиль привязан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile_id: { type: string, format: uuid }
+                  display_name: { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/parents/children:
+    get:
+      tags: [parents]
+      summary: Список привязанных детей
+      operationId: listChildren
+      security: [{ parentTokenAuth: [] }]
+      responses:
+        "200":
+          description: Привязанные профили
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LinkedChild" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/parents/children/{profile_id}/summary:
+    get:
+      tags: [parents]
+      summary: Сводка прогресса ребёнка
+      description: |
+        Доступно только для привязанного профиля (иначе 404 — факт существования
+        чужого профиля не раскрывается). `state` непрозрачен для сервера —
+        его интерпретирует клиент.
+      operationId: getChildSummary
+      security: [{ parentTokenAuth: [] }]
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Профиль и игровое состояние
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile_id: { type: string, format: uuid }
+                  display_name: { type: string }
+                  state: { type: object }
+                  state_version: { type: integer }
+                  updated_at: { type: string, format: date-time }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/parents/children/{profile_id}/bonuses:
+    post:
+      tags: [parents]
+      summary: Начислить ребёнку бонусные баллы
+      description: Бонус попадает ребёнку в список неприменённых; клиент ребёнка подтверждает начисление через `POST /v1/profiles/me/bonuses/{id}/applied`.
+      operationId: createChildBonus
+      security: [{ parentTokenAuth: [] }]
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, reason]
+              properties:
+                amount: { type: integer, minimum: 1, maximum: 10000 }
+                reason: { type: string, maxLength: 200 }
+            example:
+              amount: 100
+              reason: "За отличную неделю"
+      responses:
+        "201":
+          description: Бонус создан
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bonus" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+components:
+  securitySchemes:
+    deviceTokenAuth:
+      type: http
+      scheme: bearer
+      description: Токен устройства ребёнка (на сервере — только SHA-256-хэш).
+    parentTokenAuth:
+      type: http
+      scheme: bearer
+      description: Токен родительской сессии из OTP-флоу (на сервере — только хэш).
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum: [invalid_request, unauthorized, not_found, version_conflict, internal]
+            message: { type: string }
+      example:
+        error: { code: "unauthorized", message: "профиль не найден или токен неверный" }
+
+    ProfileIdentity:
+      type: object
+      properties:
+        profile_id: { type: string, format: uuid }
+        display_name: { type: string, example: "Финни" }
+        link_code: { type: string, example: "K7M2QN" }
+        created_at: { type: string, format: date-time }
+
+    ProfileState:
+      type: object
+      properties:
+        state:
+          type: object
+          description: Произвольный JSON-объект, непрозрачный для сервера.
+        state_version: { type: integer, example: 3 }
+        updated_at: { type: string, format: date-time }
+
+    ContentBundle:
+      type: object
+      properties:
+        version: { type: integer, example: 1 }
+        published_at: { type: string, format: date-time }
+        payload: { $ref: "#/components/schemas/ContentPayload" }
+
+    ContentPayload:
+      type: object
+      description: Контракт контента v1 (согласован с клиентом).
+      properties:
+        schema: { type: integer, enum: [1] }
+        tasks:
+          type: array
+          items: { $ref: "#/components/schemas/ContentTask" }
+        shop_items:
+          type: array
+          items: { $ref: "#/components/schemas/ContentShopItem" }
+        goals:
+          type: array
+          items: { $ref: "#/components/schemas/ContentGoal" }
+        glossary:
+          type: array
+          items: { $ref: "#/components/schemas/ContentGlossaryTerm" }
+
+    ContentTask:
+      type: object
+      properties:
+        id: { type: string }
+        topic: { type: string, enum: [budget, saving, payments] }
+        title: { type: string }
+        situation: { type: string }
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              text: { type: string }
+              is_good: { type: boolean }
+              explanation: { type: string }
+              effects:
+                type: object
+                properties:
+                  balance_delta: { type: integer }
+                  savings_delta: { type: integer }
+                  mood_delta: { type: integer }
+        reward: { type: integer }
+
+    ContentShopItem:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [mandatory, optional] }
+        price: { type: integer }
+        mood_delta: { type: integer }
+        hunger_delta: { type: integer }
+
+    ContentGoal:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        cost: { type: integer }
+        emoji: { type: string }
+
+    ContentGlossaryTerm:
+      type: object
+      properties:
+        term: { type: string }
+        definition: { type: string }
+
+    LinkedChild:
+      type: object
+      properties:
+        profile_id: { type: string, format: uuid }
+        display_name: { type: string }
+        linked_at: { type: string, format: date-time }
+        state_version: { type: integer }
+        updated_at: { type: string, format: date-time }
+
+    PendingBonus:
+      type: object
+      properties:
+        id: { type: integer }
+        amount: { type: integer }
+        reason: { type: string }
+        created_at: { type: string, format: date-time }
+
+    Bonus:
+      type: object
+      properties:
+        bonus_id: { type: integer }
+        profile_id: { type: string, format: uuid }
+        amount: { type: integer }
+        reason: { type: string }
+        created_at: { type: string, format: date-time }
+        applied_at: { type: string, format: date-time, nullable: true }
+
+  responses:
+    BadRequest:
+      description: Ошибка валидации запроса
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    Unauthorized:
+      description: Нет или недействителен токен
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
