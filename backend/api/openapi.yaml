@@ -430,7 +430,7 @@ paths:
               type: object
               required: [amount, reason]
               properties:
-                amount: { type: integer, minimum: 1, maximum: 10000 }
+                amount: { type: integer, minimum: 1, maximum: 100 }
                 reason: { type: string, maxLength: 200 }
             example:
               amount: 100
@@ -496,9 +496,18 @@ components:
 
     ContentPayload:
       type: object
-      description: Контракт контента v1 (согласован с клиентом).
+      description: |
+        Контракт контента (согласован с клиентом). Версия определяется полем `schema`:
+        - **v1** — стартовый бандл: `tasks`, `shop_items`, `goals`, `glossary`.
+        - **v2** — полный игровой контент спецификации (5 периодов): секции
+          `economy` (обязательные расходы, правила СР и стадий, откат, пассивный
+          доход, лимит родительского бонуса 100), `professions` (8 профессий с
+          курсами, собеседованиями и мини-играми), `shop_items` (22 товара),
+          `goals` (3 цели), `tasks` (задания A1–G2), `hitrik_scenes`, `events`,
+          `archetypes` (5 архетипов с перками), `glossary` (16 терминов),
+          `periods` (параметры периодов и реплики питомца).
       properties:
-        schema: { type: integer, enum: [1] }
+        schema: { type: integer, enum: [1, 2] }
         tasks:
           type: array
           items: { $ref: "#/components/schemas/ContentTask" }

@@ -18,7 +18,7 @@ const (
 	otpTTL           = 10 * time.Minute
 	parentSessionTTL = 30 * 24 * time.Hour
 
-	maxBonusAmount    = 10000
+	maxBonusAmount    = 100
 	maxBonusReasonLen = 200
 )
 
@@ -270,7 +270,7 @@ func (h *handler) createChildBonus(c *gin.Context) {
 		return
 	}
 	if req.Amount < 1 || req.Amount > maxBonusAmount {
-		writeBadRequest(c, "amount: целое число от 1 до 10000")
+		writeBadRequest(c, "amount: целое число от 1 до 100")
 		return
 	}
 	req.Reason = strings.TrimSpace(req.Reason)

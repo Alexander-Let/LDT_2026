@@ -591,6 +591,7 @@ func TestCreateChildBonusValidation(t *testing.T) {
 
 	for _, body := range []string{
 		`{"amount":0,"reason":"x"}`,
+		`{"amount":101,"reason":"x"}`,
 		`{"amount":10001,"reason":"x"}`,
 		`{"amount":-5,"reason":"x"}`,
 		`{"amount":10,"reason":"` + strings.Repeat("о", 201) + `"}`,
