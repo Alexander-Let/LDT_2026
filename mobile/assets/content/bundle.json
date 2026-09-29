@@ -1,0 +1,3299 @@
+{
+  "schema": 2,
+  "meta": {
+    "game": "Питомец Финни",
+    "locale": "ru",
+    "periods_count": 5,
+    "age_range": "7-11",
+    "source": "Полная финальная спецификация «Питомец Финни» — периоды 1–5 (Context/Infa.md)",
+    "notes": "Мобильный клиент забирает payload как есть и строит на нём игровой движок. Все суммы — в монетах (игровая валюта, не обменивается на настоящие деньги)."
+  },
+  "economy": {
+    "currency": {
+      "name": "монеты",
+      "icon": "🪙",
+      "real_money_exchangeable": false
+    },
+    "mandatory_expenses": {
+      "total_per_period": 60,
+      "items": [
+        {
+          "item_id": "item_01",
+          "price": 25
+        },
+        {
+          "item_id": "item_02",
+          "price": 15
+        },
+        {
+          "item_id": "item_03",
+          "price": 20
+        }
+      ],
+      "comment": "При зарплате 60 монет (художник) все монеты уходят на обязательное — это учит компромиссу."
+    },
+    "dev_score": {
+      "max_per_period": 50,
+      "rules": [
+        {
+          "id": "mandatory_closed",
+          "condition": "Все обязательные куплены",
+          "points": 15,
+          "from_period": 1
+        },
+        {
+          "id": "fact_matches_plan",
+          "condition": "Факт ≈ план (±10%)",
+          "points": 10,
+          "from_period": 1
+        },
+        {
+          "id": "savings_positive",
+          "condition": "Накопления > 0",
+          "points": 8,
+          "from_period": 1
+        },
+        {
+          "id": "task_completed",
+          "condition": "Выполнено задание",
+          "points": 5,
+          "from_period": 1
+        },
+        {
+          "id": "resisted_hitrik",
+          "condition": "Устоял перед Хитриком",
+          "points": 5,
+          "from_period": 2
+        },
+        {
+          "id": "course_bought",
+          "condition": "Куплен обучающий курс",
+          "points": 7,
+          "from_period": 3
+        }
+      ],
+      "stages": [
+        {
+          "id": "baby",
+          "name": "Малыш",
+          "score_min": 0,
+          "score_max": 59,
+          "min_period": 1
+        },
+        {
+          "id": "teen",
+          "name": "Подросток",
+          "score_min": 60,
+          "score_max": 119,
+          "min_period": 2
+        },
+        {
+          "id": "pro",
+          "name": "Профи",
+          "score_min": 120,
+          "score_max": null,
+          "min_period": 4
+        }
+      ],
+      "transition_rule": "Переход на стадию возможен только начиная с минимального периода стадии: в периоде 1 СР накапливается, но переход в «Подросток» заблокирован; в «Профи» — не раньше периода 4."
+    },
+    "rollback": {
+      "available_from_period": 2,
+      "uses_per_period": 1,
+      "keeps": [
+        "СР",
+        "накопления",
+        "архетип-шкалы",
+        "купленные предметы"
+      ],
+      "resets": [
+        "баланс периода",
+        "покупки периода",
+        "план",
+        "факт"
+      ],
+      "events_rollbackable": false,
+      "unused_bonus": {
+        "coins": 10,
+        "applies_to": "next_period"
+      },
+      "no_rollback_streak_bonus": {
+        "periods": 5,
+        "coins": 50,
+        "accessory": "crown",
+        "accessory_emoji": "👑",
+        "title": "Железная воля"
+      },
+      "screen": {
+        "title": "🔄 Попробовать неделю заново",
+        "intro_line": "Видишь эту кнопку? Если неделя вышла совсем не так — можно попробовать снова. Но случайное не отменить. Что случилось — то случилось",
+        "buttons": [
+          "Попробовать заново",
+          "Идти дальше"
+        ]
+      }
+    },
+    "passive_income": {
+      "screen_title": "💰 Пассивный доход этой недели",
+      "total_line_template": "Итого пришло само: +{total} монет",
+      "pet_line": "Это работают твои прошлые решения. Без работы прямо сейчас",
+      "button": "Отлично!",
+      "rule": "Начисляется в начале каждого периода, начиная с периода покупки предмета.",
+      "sources": [
+        {
+          "item_id": "item_09",
+          "coins_per_period": 10
+        },
+        {
+          "item_id": "item_15",
+          "coins_per_period": 5
+        },
+        {
+          "item_id": "item_16",
+          "coins_per_period": 8
+        },
+        {
+          "item_id": "item_21",
+          "coins_per_period": 5
+        }
+      ]
+    },
+    "parent_bonus": {
+      "min_amount": 1,
+      "max_amount": 100,
+      "ui_suggested_range": [
+        10,
+        100
+      ],
+      "reasons": [
+        "За помощь по дому",
+        "За хорошую оценку",
+        "За выполненное поручение",
+        "Просто так (карманные деньги)"
+      ],
+      "child_notification_template": "Родитель начислил {amount} монет за {reason}",
+      "comment": "Родитель не может начислить более 100 монет за раз — это предотвращает обесценивание игровой экономики."
+    },
+    "budget_baskets": [
+      {
+        "id": "needs",
+        "name": "Нужное",
+        "color": "red",
+        "emoji": "🔴",
+        "hint": "То, без чего мне плохо",
+        "pet_line": "Сюда сначала. Это моя еда и уход"
+      },
+      {
+        "id": "wants",
+        "name": "Хочу",
+        "color": "yellow",
+        "emoji": "🟡",
+        "hint": "То, что приятно, но подождёт",
+        "pet_line": "Это тоже важно. Но только после нужного"
+      },
+      {
+        "id": "savings",
+        "name": "Коплю",
+        "color": "green",
+        "emoji": "🟢",
+        "hint": "Откладываю на мечту",
+        "pet_line": "А это — моя мечта. Каждую неделю понемногу"
+      },
+      {
+        "id": "reserve",
+        "name": "Резерв",
+        "color": "white",
+        "emoji": "⚪",
+        "hint": "На всякий случай",
+        "from_period": 3,
+        "optional": true,
+        "pet_line": "Помнишь — в прошлый раз что-то могло сломаться? Давай добавим ещё одну корзину. На всякий случай",
+        "rule": "Если происходит непредвиденное событие — резерв покрывает его без ущерба для остального."
+      }
+    ],
+    "planning_reminder": "Сначала — план. Помни: сначала решаем, куда пойдут монеты, потом тратим",
+    "purchase_feedback": {
+      "mandatory_bought": "Спасибо! {показатель} в порядке",
+      "optional_bought": "Приятная покупка! Главное — нужное уже закрыто",
+      "not_enough_coins": "Не хватает {n} монет. Выполни задание или перенеси покупку",
+      "not_enough_coins_options": [
+        "Выполни задание — получишь монеты",
+        "Выбери что-то подешевле",
+        "Перенеси на следующую неделю"
+      ]
+    },
+    "savings_deposit_reactions": [
+      {
+        "range": [
+          0,
+          0
+        ],
+        "line": "Окей, в этот раз без накоплений. В следующий раз попробуем?"
+      },
+      {
+        "range": [
+          1,
+          19
+        ],
+        "line": "Маленький шаг — но уже начало!"
+      },
+      {
+        "range": [
+          20,
+          40
+        ],
+        "line": "Хороший взнос! Мечта становится ближе"
+      },
+      {
+        "range": [
+          41,
+          null
+        ],
+        "line": "Серьёзный подход! Но не забудь оставить на следующую неделю"
+      }
+    ],
+    "savings_withdrawal": {
+      "intro_line": "Кстати — монеты в копилке можно взять обратно. Но я покажу как это работает",
+      "confirm_template": "Точно взять {n} монет? После снятия: накоплено станет {m}, до цели {l}, срок увеличится на {k} недель",
+      "buttons": [
+        "Взять",
+        "Оставить"
+      ]
+    },
+    "appearance": {
+      "base_combinations_count": 9,
+      "fur_colors": [
+        "Оранжевый",
+        "Синий",
+        "Зелёный"
+      ],
+      "ear_shapes": [
+        "Круглые",
+        "Острые",
+        "Висячие"
+      ],
+      "unlockable_accessories": [
+        {
+          "id": "bow",
+          "name": "Бантик",
+          "emoji": "🎀",
+          "unlock": "Покупка item_06"
+        },
+        {
+          "id": "helmet",
+          "name": "Шлем",
+          "emoji": "⛑️",
+          "unlock": "goal_01 (самокат)"
+        },
+        {
+          "id": "party_hat",
+          "name": "Колпак",
+          "emoji": "🎉",
+          "unlock": "goal_03 (день рождения)"
+        },
+        {
+          "id": "crown",
+          "name": "Корона",
+          "emoji": "👑",
+          "unlock": "5 периодов без отката"
+        },
+        {
+          "id": "trophy",
+          "name": "Кубок",
+          "emoji": "🏆",
+          "unlock": "Покупка item_20"
+        }
+      ]
+    },
+    "demo_mode": {
+      "activation": "раздел для взрослого",
+      "instant_work_timers": true,
+      "instant_period_transition": true,
+      "all_tasks_available": true,
+      "profile_reset_button": true,
+      "banner": "🔧 ДЕМО-РЕЖИМ АКТИВЕН",
+      "banner_buttons": [
+        "Ускорить период",
+        "Сбросить профиль"
+      ]
+    },
+    "parent_section": {
+      "barrier": "Арифметический пример (меняется каждый раз), пример: 17 + 8 = ?",
+      "no_child_grades": true,
+      "principles": [
+        "Зарабатывать прежде чем тратить",
+        "Различать нужное и желаемое",
+        "Планировать до того как тратить",
+        "Копить регулярно на понятную цель",
+        "Распознавать манипуляции"
+      ]
+    }
+  },
+  "professions": [
+    {
+      "id": "artist",
+      "name": "Художник",
+      "emoji": "🎨",
+      "salary": 60,
+      "work_hours": 3,
+      "periods": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "required_course_item": null,
+      "hook": "Рисуешь — зарабатываешь. Творчество в кайф",
+      "hint": "Меньше монет, но больше свободы",
+      "after_choice_line": "О, художник! Хороший выбор. Слушай — я расскажу тебе кое-что важное перед собеседованием",
+      "salary_line": "Картину продали? Отлично! 60 монет. Теперь решай, куда они пойдут",
+      "course": {
+        "format": "full",
+        "screens": [
+          {
+            "n": 1,
+            "scene": "Питомец сидит перед холстом, вокруг мячики",
+            "lines": [
+              "Однажды я получил 60 монет за картину. Сразу потратил всё на мячики и наклейки. А потом оказалось — на еду не осталось ни монетки",
+              "Сижу голодный, смотрю на мячики. С тех пор я понял: сначала — нужное"
+            ],
+            "interactive": {
+              "type": "choose_one",
+              "prompt": "Нажми на кучку которая «нужное»",
+              "options": [
+                {
+                  "id": "food",
+                  "label": "🍖 Еда и уход",
+                  "correct": true,
+                  "reaction": "Точно! Без еды — никак"
+                },
+                {
+                  "id": "toys",
+                  "label": "🎮 Игрушки",
+                  "correct": false,
+                  "reaction": "Игрушки — это приятно. Но без еды мне будет плохо. Попробуй ещё раз"
+                }
+              ]
+            }
+          },
+          {
+            "n": 2,
+            "scene": "Питомец показывает две картины",
+            "lines": [
+              "Мой друг Пёсик тоже художник. Он говорит: \"Зачем планировать? Буду тратить как хочется\"",
+              "Каждую неделю у него то густо, то пусто. А я делю монеты на три части до того, как начинаю тратить. И всегда хватает"
+            ],
+            "interactive": {
+              "type": "distribute_coins",
+              "prompt": "Перетащи 60 монет по трём корзинам",
+              "total": 60,
+              "baskets": [
+                "🔴 Нужное",
+                "🟡 Хочу",
+                "🟢 Коплю"
+              ],
+              "accept_any_distribution": true,
+              "completion_line": "Вот! Теперь ты знаешь, куда пойдёт каждая монета. Это называется бюджет"
+            }
+          },
+          {
+            "n": 3,
+            "scene": "Питомец с готовой картиной",
+            "lines": [
+              "Художник получает деньги за работу. Это называется доход — монеты которые к тебе пришли",
+              "Твой доход на этой неделе — 60 монет"
+            ],
+            "interactive": {
+              "type": "tap_to_sell",
+              "prompt": "Нажми на картину чтобы «продать»",
+              "animation": "монеты летят к ребёнку",
+              "completion_line": "Отлично! Теперь ты готов к собеседованию"
+            }
+          }
+        ]
+      },
+      "interview": {
+        "format": "full",
+        "npc": "Мадам Кисточкина",
+        "question": "Финни, у тебя будет 60 монет в неделю. Что сделаешь в первую очередь?",
+        "options": [
+          {
+            "id": "a",
+            "text": "Куплю еду и уход",
+            "correct": true,
+            "reaction": "Именно! Добро пожаловать",
+            "pet_hint_on_error": null
+          },
+          {
+            "id": "b",
+            "text": "Куплю всё крутое",
+            "correct": false,
+            "reaction": "А еда?",
+            "pet_hint_on_error": "Помнишь историю с мячиками?"
+          },
+          {
+            "id": "c",
+            "text": "Спрячу в копилку",
+            "correct": false,
+            "reaction": "А есть что будешь?",
+            "pet_hint_on_error": "Накопления важны — но сначала обязательное"
+          }
+        ],
+        "hired_line": "Взяли! Теперь — за работу. Я буду ждать тебя дома"
+      },
+      "minigame": {
+        "type": "coloring",
+        "task": "Раскрась картину по зонам",
+        "duration_min": [
+          2,
+          3
+        ],
+        "params": {
+          "zones": "контурный рисунок разбит на зоны, каждая зона имеет цветовую подсказку (кружок)",
+          "palette": "палитра внизу",
+          "interaction": "тап по зоне с выбранным цветом — зона закрашивается"
+        },
+        "error_line": "Хм, что-то не то. Посмотри на подсказку внутри зоны",
+        "error_effect": "Подсказка увеличивается. Зона мигает",
+        "final": "Картина «оживает», анимация",
+        "success_line": "Картина готова! Покупатель доволен",
+        "reward_animation": "60 монет летят к ребёнку"
+      }
+    },
+    {
+      "id": "courier",
+      "name": "Курьер",
+      "emoji": "📦",
+      "salary": 100,
+      "work_hours": 6,
+      "periods": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "required_course_item": null,
+      "hook": "Больше всех зарабатывает. Но придётся побегать",
+      "hint": "Больше монет, больше времени",
+      "after_choice_line": "Курьер! Монет будет много. Но сначала — послушай меня, это пригодится",
+      "salary_line": "Все заказы доставил? 100 монет! Теперь решай, куда они пойдут",
+      "course": {
+        "format": "full",
+        "screens": [
+          {
+            "n": 1,
+            "scene": "Питомец с рюкзаком, рядом стопка коробок",
+            "lines": [
+              "Однажды я взял сразу 10 заказов — думал, заработаю кучу монет. Устал на третьем. Опоздал со всеми остальными",
+              "Мой сосед Котик берёт ровно столько заказов, сколько может выполнить. И зарабатывает стабильно каждую неделю"
+            ],
+            "interactive": {
+              "type": "choose_one",
+              "prompt": "Выбери количество заказов",
+              "options": [
+                {
+                  "id": "three",
+                  "label": "3 заказа — точно успею",
+                  "correct": true,
+                  "reaction": "Правильно! Лучше меньше, но стабильно"
+                },
+                {
+                  "id": "seven",
+                  "label": "7 заказов — может успею",
+                  "correct": false,
+                  "reaction": "Помнишь мою историю? Попробуй ещё раз"
+                },
+                {
+                  "id": "ten",
+                  "label": "10 заказов — хочу много",
+                  "correct": false,
+                  "reaction": "Помнишь мою историю? Попробуй ещё раз"
+                }
+              ]
+            }
+          },
+          {
+            "n": 2,
+            "scene": "Питомец смотрит на карту",
+            "lines": [
+              "Умный курьер планирует маршрут заранее. Это как план бюджета — только для дороги"
+            ],
+            "interactive": {
+              "type": "route_order",
+              "prompt": "Соедини точки на карте от ближней к дальней",
+              "points": [
+                {
+                  "id": "a",
+                  "distance": "рядом"
+                },
+                {
+                  "id": "b",
+                  "distance": "средне"
+                },
+                {
+                  "id": "c",
+                  "distance": "далеко"
+                }
+              ],
+              "correct_order": [
+                "a",
+                "b",
+                "c"
+              ],
+              "reactions": {
+                "correct": "Вот это маршрут! Минимум шагов",
+                "wrong": "Так придётся бегать туда-сюда. Начни с ближней"
+              }
+            }
+          },
+          {
+            "n": 3,
+            "scene": null,
+            "lines": [
+              "Курьер получает монеты за каждый заказ. 3 заказа по 33 монеты — итого 100 монет"
+            ],
+            "interactive": {
+              "type": "tap_envelope",
+              "prompt": "Нажми на конверт",
+              "animation": "100 монет летят к ребёнку",
+              "completion_line": "Готов к собеседованию! Ты знаешь всё что нужно"
+            }
+          }
+        ]
+      },
+      "interview": {
+        "format": "full",
+        "npc": "Дядя Максим",
+        "question": "Как не потратить все 100 монет в первый же день?",
+        "options": [
+          {
+            "id": "a",
+            "text": "Составлю план до начала недели",
+            "correct": true,
+            "reaction": "Вот это подход. Принят!",
+            "pet_hint_on_error": null
+          },
+          {
+            "id": "b",
+            "text": "Буду думать по ходу",
+            "correct": false,
+            "reaction": "Уставший курьер думает плохо",
+            "pet_hint_on_error": "Помнишь Котика? Он планирует заранее"
+          },
+          {
+            "id": "c",
+            "text": "Потрачу сразу — заслужил",
+            "correct": false,
+            "reaction": "И к среде — пусто",
+            "pet_hint_on_error": "Помнишь мою историю?"
+          }
+        ],
+        "hired_line": "Взяли! Теперь — за работу. Я буду ждать тебя дома"
+      },
+      "minigame": {
+        "type": "delivery",
+        "task": "Развези 3 заказа по адресам",
+        "duration_min": [
+          2,
+          3
+        ],
+        "params": {
+          "houses": 3,
+          "parcels": [
+            {
+              "id": "gift",
+              "icon": "🎁"
+            },
+            {
+              "id": "pizza",
+              "icon": "🍕"
+            },
+            {
+              "id": "books",
+              "icon": "📚"
+            }
+          ],
+          "rule": "На домах — такие же иконки; перетащи посылку к нужному дому"
+        },
+        "error_line": "Упс! Не туда. Посмотри на иконку на посылке и на доме",
+        "error_effect": "Нужный дом мигает",
+        "final": "Жители машут лапами",
+        "success_line": "Все заказы доставлены вовремя!",
+        "reward_animation": "100 монет летят к ребёнку"
+      }
+    },
+    {
+      "id": "cook",
+      "name": "Повар",
+      "emoji": "🍕",
+      "salary": 80,
+      "work_hours": 4,
+      "periods": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "required_course_item": null,
+      "hook": "Кормишь других — зарабатываешь сам",
+      "hint": "Золотая середина",
+      "after_choice_line": "Повар! Я сам однажды работал поваром — расскажу что узнал",
+      "salary_line": "Накормил всех? 80 монет. Теперь решай, куда они пойдут",
+      "course": {
+        "format": "full",
+        "screens": [
+          {
+            "n": 1,
+            "scene": "Питомец в колпаке",
+            "lines": [
+              "Я работал поваром. Однажды не проверил, сколько стоят продукты — и потратил на закупку почти всю выручку. Осталось совсем мало",
+              "Теперь я сначала считаю расходы, а потом смотрю что остаётся. Это называется доход"
+            ],
+            "interactive": {
+              "type": "choose_one",
+              "prompt": "Посчитай доход повара: выручка 120 монет, расходы 40 монет",
+              "options": [
+                {
+                  "id": "60",
+                  "label": "60",
+                  "correct": false,
+                  "reaction": "Попробуй вычесть расходы из выручки"
+                },
+                {
+                  "id": "80",
+                  "label": "80",
+                  "correct": true,
+                  "reaction": "Точно! 120 минус 40 — остаётся 80 монет"
+                },
+                {
+                  "id": "100",
+                  "label": "100",
+                  "correct": false,
+                  "reaction": "Попробуй вычесть расходы из выручки"
+                }
+              ]
+            }
+          },
+          {
+            "n": 2,
+            "scene": null,
+            "lines": [
+              "Мой друг Зайчик покупает продукты в последний момент. Иногда нужного нет — и готовит что попало. Я закупаю по плану"
+            ],
+            "interactive": {
+              "type": "priority_order",
+              "prompt": "Расставь продукты по приоритету: перетащи в корзину сначала обязательные",
+              "ingredients": [
+                {
+                  "id": "meat",
+                  "label": "🥩 Мясо",
+                  "priority": true
+                },
+                {
+                  "id": "onion",
+                  "label": "🧅 Лук",
+                  "priority": true
+                },
+                {
+                  "id": "cake",
+                  "label": "🍰 Торт",
+                  "priority": false
+                },
+                {
+                  "id": "decor",
+                  "label": "🎂 Украшения",
+                  "priority": false
+                }
+              ],
+              "correct": "Мясо и лук первыми",
+              "reactions": {
+                "correct": "Правильно! Сначала — без чего никак",
+                "wrong": "Подумай — без чего блюдо не приготовишь?"
+              }
+            }
+          },
+          {
+            "n": 3,
+            "scene": null,
+            "lines": [
+              "Повар зарабатывает 80 монет в неделю. Помни: сначала — нужное для себя"
+            ],
+            "interactive": {
+              "type": "tap_plate",
+              "prompt": "Нажми на тарелку",
+              "animation": "80 монет летят к ребёнку",
+              "completion_line": "Всё, ты готов! Иди на собеседование"
+            }
+          }
+        ]
+      },
+      "interview": {
+        "format": "full",
+        "npc": "Шеф Борщенко",
+        "question": "Ты заработал 80 монет. Друг говорит: купи крутую сковородку за 50 монет. Что делаешь?",
+        "options": [
+          {
+            "id": "a",
+            "text": "Сначала проверю, хватит ли на еду",
+            "correct": true,
+            "reaction": "Умница! Принят!",
+            "pet_hint_on_error": null
+          },
+          {
+            "id": "b",
+            "text": "Куплю — она крутая",
+            "correct": false,
+            "reaction": "А есть будешь с крутой сковородкой?",
+            "pet_hint_on_error": "Помнишь историю с продуктами?"
+          },
+          {
+            "id": "c",
+            "text": "Ничего не куплю",
+            "correct": false,
+            "reaction": "Деньги должны работать",
+            "pet_hint_on_error": "Сначала — обязательное, потом — остальное"
+          }
+        ],
+        "hired_line": "Взяли! Теперь — за работу. Я буду ждать тебя дома"
+      },
+      "minigame": {
+        "type": "cooking",
+        "task": "Собери 3 блюда по рецепту",
+        "duration_min": [
+          2,
+          3
+        ],
+        "params": {
+          "plates": 3,
+          "ingredients_total": 8,
+          "recipes": [
+            {
+              "dish": "Пицца",
+              "ingredients": [
+                "🍅",
+                "🧀",
+                "🫓"
+              ]
+            },
+            {
+              "dish": "Суп",
+              "ingredients": [
+                "🥕",
+                "🧅",
+                "💧"
+              ]
+            },
+            {
+              "dish": "Салат",
+              "ingredients": [
+                "🥬",
+                "🍅",
+                "🫒"
+              ]
+            }
+          ],
+          "rule": "Рецепт сбоку, 8 ингредиентов снизу; перетащи нужные на нужную тарелку"
+        },
+        "error_line": "Этот ингредиент не подходит. Загляни в рецепт",
+        "error_effect": "Нужная строка рецепта подсвечивается",
+        "final": "Посетители довольны",
+        "success_line": "Все блюда готовы!",
+        "reward_animation": "80 монет летят к ребёнку"
+      }
+    },
+    {
+      "id": "illustrator",
+      "name": "Иллюстратор",
+      "emoji": "🖼️",
+      "salary": 90,
+      "work_hours": 3,
+      "periods": [
+        3,
+        4,
+        5
+      ],
+      "required_course_item": "item_11",
+      "hook": null,
+      "hint": null,
+      "after_choice_line": null,
+      "salary_line": null,
+      "course": {
+        "format": "short",
+        "screens": [
+          {
+            "n": 1,
+            "scene": null,
+            "lines": [
+              "Иллюстратор рисует быстро и по заказу. Меньше времени — но зарплата больше чем у обычного художника"
+            ],
+            "interactive": {
+              "type": "choose_tool",
+              "prompt": "Выбери правильный инструмент для задания"
+            }
+          }
+        ],
+        "note": "Курс и собеседование сокращённые (2 экрана)"
+      },
+      "interview": {
+        "format": "short",
+        "npc": null,
+        "question": null,
+        "options": [],
+        "hired_line": null
+      },
+      "minigame": {
+        "type": "coloring",
+        "task": "Раскрась три иллюстрации по заказу клиента",
+        "duration_min": [
+          2,
+          2
+        ],
+        "params": {
+          "illustrations": 3,
+          "note": "Быстрее чем обычный художник — 2 минуты вместо 3"
+        },
+        "success_line": null,
+        "reward_animation": "90 монет летят к ребёнку"
+      }
+    },
+    {
+      "id": "chef",
+      "name": "Шеф-повар",
+      "emoji": "👨‍🍳",
+      "salary": 110,
+      "work_hours": 4,
+      "periods": [
+        3,
+        4,
+        5
+      ],
+      "required_course_item": "item_12",
+      "hook": null,
+      "hint": null,
+      "after_choice_line": null,
+      "salary_line": null,
+      "course": {
+        "format": "short",
+        "screens": [
+          {
+            "n": 1,
+            "scene": null,
+            "lines": [
+              "Шеф-повар управляет командой и получает больше. Но и ответственность выше"
+            ],
+            "interactive": null
+          }
+        ],
+        "note": "Курс и собеседование сокращённые (2 экрана)"
+      },
+      "interview": {
+        "format": "short",
+        "npc": null,
+        "question": null,
+        "options": [],
+        "hired_line": null
+      },
+      "minigame": {
+        "type": "cooking",
+        "task": "Собери 5 блюд",
+        "duration_min": [
+          2,
+          3
+        ],
+        "params": {
+          "dishes": 5,
+          "note": "Сложнее, чем у повара (5 блюд вместо 3), но дольше не занимает"
+        },
+        "success_line": null,
+        "reward_animation": "110 монет летят к ребёнку"
+      }
+    },
+    {
+      "id": "accountant",
+      "name": "Бухгалтер-помощник",
+      "emoji": "📊",
+      "salary": 120,
+      "work_hours": 5,
+      "periods": [
+        4,
+        5
+      ],
+      "required_course_item": "item_10",
+      "hook": null,
+      "hint": null,
+      "after_choice_line": null,
+      "salary_line": null,
+      "course": {
+        "format": "short",
+        "screens": [
+          {
+            "n": 1,
+            "scene": null,
+            "lines": [
+              "Бухгалтер следит за деньгами компании. Это скучно? Нет — это как игра в детектива, но с цифрами"
+            ],
+            "interactive": null
+          }
+        ],
+        "note": "Курс и собеседование сокращённые (2 экрана)"
+      },
+      "interview": {
+        "format": "short",
+        "npc": null,
+        "question": null,
+        "options": [],
+        "hired_line": null
+      },
+      "minigame": {
+        "type": "budget_audit",
+        "task": "Найди ошибку в трёх бюджетах компании",
+        "duration_min": [
+          2,
+          3
+        ],
+        "params": {
+          "budgets": 3,
+          "ui": "интерактивная таблица с подсветкой"
+        },
+        "success_line": null,
+        "reward_animation": "120 монет летят к ребёнку"
+      }
+    },
+    {
+      "id": "photographer",
+      "name": "Фотограф",
+      "emoji": "📷",
+      "salary": 85,
+      "work_hours": 3,
+      "periods": [
+        4,
+        5
+      ],
+      "required_course_item": "item_17",
+      "hook": null,
+      "hint": null,
+      "after_choice_line": null,
+      "salary_line": null,
+      "course": {
+        "format": "short",
+        "screens": [
+          {
+            "n": 1,
+            "scene": null,
+            "lines": [
+              "Фотограф видит мир иначе. И зарабатывает своим взглядом"
+            ],
+            "interactive": null
+          }
+        ]
+      },
+      "interview": {
+        "format": "short",
+        "npc": null,
+        "question": null,
+        "options": [],
+        "hired_line": null
+      },
+      "minigame": {
+        "type": "photo_angle",
+        "task": "Сделай 3 фото — выбери правильный ракурс из трёх вариантов для каждого объекта",
+        "duration_min": [
+          2,
+          3
+        ],
+        "params": {
+          "photos": 3,
+          "angle_options_per_photo": 3
+        },
+        "success_line": null,
+        "reward_animation": "85 монет летят к ребёнку"
+      }
+    },
+    {
+      "id": "consultant",
+      "name": "Финансовый консультант",
+      "emoji": "💼",
+      "salary": 130,
+      "work_hours": 3,
+      "periods": [
+        5
+      ],
+      "required_course_item": "any",
+      "required_course_note": "Любой курс (item_10, item_11 или item_12)",
+      "hook": null,
+      "hint": null,
+      "after_choice_line": null,
+      "salary_line": null,
+      "course": {
+        "format": "short",
+        "screens": [
+          {
+            "n": 1,
+            "scene": null,
+            "lines": [
+              "Финансовый консультант помогает другим управлять деньгами. Для этого нужно хорошо понимать всё что ты уже изучил"
+            ],
+            "interactive": null
+          }
+        ]
+      },
+      "interview": {
+        "format": "short",
+        "npc": null,
+        "question": null,
+        "options": [],
+        "hired_line": null
+      },
+      "minigame": {
+        "type": "budget_advice",
+        "task": "Помоги Зайчику: составь бюджет его 100 монет",
+        "duration_min": [
+          2,
+          3
+        ],
+        "params": {
+          "npc": "Зайчик",
+          "npc_line": "Зайчик получил 100 монет. Он говорит: «Хочу всё потратить на морковку!»",
+          "total": 100,
+          "constraints": [
+            {
+              "basket": "🔴 Нужное (еда, уход)",
+              "min": 40
+            },
+            {
+              "basket": "🟡 Хочу (морковка)",
+              "rule": "остаток"
+            },
+            {
+              "basket": "🟢 Коплю",
+              "min": 10
+            }
+          ],
+          "control": "ползунок"
+        },
+        "success_line": "Зайчик доволен! Ты настоящий консультант",
+        "reward_animation": "130 монет летят к ребёнку"
+      }
+    }
+  ],
+  "shop_items": [
+    {
+      "id": "item_01",
+      "name": "Миска с кормом",
+      "emoji": "🍖",
+      "type": "mandatory",
+      "price": 25,
+      "category": "Питание",
+      "effects": {
+        "satiety": 30
+      },
+      "available_from_period": 1,
+      "unlocks": null,
+      "passive_income_per_period": 0,
+      "lock_label": null
+    },
+    {
+      "id": "item_02",
+      "name": "Расчёска и уход",
+      "emoji": "🪮",
+      "type": "mandatory",
+      "price": 15,
+      "category": "Уход",
+      "effects": {
+        "cleanliness": 20
+      },
+      "available_from_period": 1,
+      "unlocks": null,
+      "passive_income_per_period": 0,
+      "lock_label": null
+    },
+    {
+      "id": "item_03",
+      "name": "Витамины",
+      "emoji": "💊",
+      "type": "mandatory",
+      "price": 20,
+      "category": "Здоровье",
+      "effects": {
+        "health": 25
+      },
+      "available_from_period": 1,
+      "unlocks": "Частичное лечение при болезни питомца (событие 4-Б)",
+      "passive_income_per_period": 0,
+      "lock_label": null
+    },
+    {
+      "id": "item_04",
+      "name": "Домик-лежанка",
+      "emoji": "🏠",
+      "type": "mandatory",
+      "price": 30,
+      "category": "Жильё",
+      "effects": {
+        "comfort": 30
+      },
+      "available_from_period": 2,
+      "unlocks": "Фон «уютный дом»",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется на следующей неделе"
+    },
+    {
+      "id": "item_05",
+      "name": "Мячик",
+      "emoji": "⚽",
+      "type": "optional",
+      "price": 30,
+      "category": "Развлечение",
+      "effects": {
+        "mood": 20
+      },
+      "available_from_period": 1,
+      "unlocks": null,
+      "passive_income_per_period": 0,
+      "lock_label": null
+    },
+    {
+      "id": "item_06",
+      "name": "Бантик",
+      "emoji": "🎀",
+      "type": "optional",
+      "price": 10,
+      "category": "Украшение",
+      "effects": {
+        "mood": 10
+      },
+      "available_from_period": 1,
+      "unlocks": "Аксессуар «Бантик»",
+      "passive_income_per_period": 0,
+      "lock_label": null
+    },
+    {
+      "id": "item_07",
+      "name": "Прогулка в парке",
+      "emoji": "🎡",
+      "type": "optional",
+      "price": 20,
+      "category": "Досуг",
+      "effects": {
+        "mood": 25
+      },
+      "available_from_period": 2,
+      "unlocks": "Анимацию прогулки",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется на следующей неделе"
+    },
+    {
+      "id": "item_08",
+      "name": "Наклейка",
+      "emoji": "⭐",
+      "type": "optional",
+      "price": 5,
+      "category": "Украшение",
+      "effects": {
+        "mood": 5
+      },
+      "available_from_period": 1,
+      "unlocks": null,
+      "passive_income_per_period": 0,
+      "lock_label": null
+    },
+    {
+      "id": "item_09",
+      "name": "Велосипед",
+      "emoji": "🚲",
+      "type": "optional",
+      "price": 45,
+      "category": "Транспорт",
+      "effects": {
+        "mood": 15,
+        "fatigue": -10
+      },
+      "available_from_period": 2,
+      "unlocks": "Сокращает время работы курьера на 1 час в следующих периодах",
+      "passive_income_per_period": 10,
+      "passive_income_note": "Экономия времени = больше заказов",
+      "pet_line_on_purchase": "На велосипеде быстрее! В следующий раз курьерская работа займёт на час меньше",
+      "lock_label": "Откроется на следующей неделе"
+    },
+    {
+      "id": "item_10",
+      "name": "Курс «Финансы»",
+      "emoji": "📚",
+      "type": "optional",
+      "subtype": "инвестиция",
+      "price": 40,
+      "category": "Обучение",
+      "effects": {
+        "intellect": 20,
+        "mood": 10
+      },
+      "available_from_period": 3,
+      "unlocks": "Профессию «Бухгалтер-помощник» (зарплата 120 монет/период)",
+      "payback": "1 период (40 вложил → +20 монет к зарплате)",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется в периоде 3"
+    },
+    {
+      "id": "item_11",
+      "name": "Курс рисования",
+      "emoji": "🎨",
+      "type": "optional",
+      "subtype": "инвестиция",
+      "price": 35,
+      "category": "Обучение",
+      "effects": {
+        "intellect": 15,
+        "mood": 15
+      },
+      "available_from_period": 3,
+      "unlocks": "Профессию «Иллюстратор» (зарплата 90 монет/период)",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется в периоде 3"
+    },
+    {
+      "id": "item_12",
+      "name": "Мастер-класс шефа",
+      "emoji": "🍳",
+      "type": "optional",
+      "subtype": "инвестиция",
+      "price": 35,
+      "category": "Обучение",
+      "effects": {
+        "intellect": 15,
+        "mood": 10
+      },
+      "available_from_period": 3,
+      "unlocks": "Профессию «Шеф-повар» (зарплата 110 монет/период)",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется в периоде 3"
+    },
+    {
+      "id": "item_13",
+      "name": "Абонемент в спортзал",
+      "emoji": "🏋️",
+      "type": "optional",
+      "price": 25,
+      "category": "Здоровье",
+      "effects": {
+        "health": 30,
+        "mood": 15
+      },
+      "available_from_period": 3,
+      "unlocks": "+10 монет бонуса к зарплате",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется в периоде 3"
+    },
+    {
+      "id": "item_14",
+      "name": "Ремонтный набор",
+      "emoji": "🔧",
+      "type": "situational",
+      "price": 20,
+      "category": "Ремонт",
+      "effects": {
+        "comfort": 0,
+        "protection": "защита от снижения комфорта"
+      },
+      "available_from_period": 3,
+      "unlocks": "Бесплатный ремонт при поломке (1 раз)",
+      "card_note": "Если что-то сломается — ремонт бесплатно. Если ничего не сломается — набор остаётся на следующий период",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется в периоде 3"
+    },
+    {
+      "id": "item_15",
+      "name": "Гаджет",
+      "emoji": "📱",
+      "type": "optional",
+      "price": 60,
+      "category": "Технологии",
+      "effects": {
+        "mood": 30,
+        "intellect": 10
+      },
+      "available_from_period": 3,
+      "unlocks": "+5 монет/период пассивно",
+      "passive_income_per_period": 5,
+      "lock_label": "Откроется в периоде 3"
+    },
+    {
+      "id": "item_16",
+      "name": "Огородик",
+      "emoji": "🌱",
+      "type": "optional",
+      "subtype": "инвестиция",
+      "price": 50,
+      "category": "Пассивный доход",
+      "effects": {
+        "mood": 10,
+        "health": 5
+      },
+      "available_from_period": 4,
+      "unlocks": "+8 монет каждую неделю",
+      "payback": "~7 периодов",
+      "pet_line": "Посадил — и оно растёт само. Я люблю наблюдать за огородиком",
+      "passive_income_per_period": 8,
+      "lock_label": "Откроется в периоде 4"
+    },
+    {
+      "id": "item_17",
+      "name": "Фотоаппарат",
+      "emoji": "📸",
+      "type": "optional",
+      "subtype": "инвестиция",
+      "price": 55,
+      "category": "Творчество",
+      "effects": {
+        "mood": 20,
+        "intellect": 15
+      },
+      "available_from_period": 4,
+      "unlocks": "Профессию «Фотограф» (зарплата 85 монет/период)",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется в периоде 4"
+    },
+    {
+      "id": "item_18",
+      "name": "Игровая консоль",
+      "emoji": "🎮",
+      "type": "optional",
+      "price": 70,
+      "category": "Развлечение",
+      "effects": {
+        "mood": 35
+      },
+      "available_from_period": 4,
+      "unlocks": "Мини-игру «Турнир» (+20–50 монет)",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется в периоде 4"
+    },
+    {
+      "id": "item_19",
+      "name": "Страховка",
+      "emoji": "🛡️",
+      "type": "situational",
+      "subtype": "защита",
+      "price": 15,
+      "price_kind": "per_period",
+      "category": "Защита",
+      "effects": {
+        "protection": "Снижает стоимость лечения/ремонта на 50%"
+      },
+      "available_from_period": 4,
+      "unlocks": null,
+      "pet_line": "Страховка — это как резерв, но умнее. Платишь немного — защищён от большого",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется в периоде 4"
+    },
+    {
+      "id": "item_20",
+      "name": "Кубок чемпиона",
+      "emoji": "🏆",
+      "type": "optional",
+      "price": 80,
+      "category": "Украшение",
+      "effects": {
+        "mood": 40,
+        "pride": "∞"
+      },
+      "available_from_period": 5,
+      "unlocks": "Аксессуар «Кубок» навсегда",
+      "passive_income_per_period": 0,
+      "lock_label": "Откроется в периоде 5"
+    },
+    {
+      "id": "item_21",
+      "name": "Финансовая газета",
+      "emoji": "📰",
+      "type": "optional",
+      "price": 10,
+      "category": "Развитие",
+      "effects": {
+        "intellect": 5
+      },
+      "available_from_period": 5,
+      "unlocks": "+5 монет/период + новый термин",
+      "passive_income_per_period": 5,
+      "lock_label": "Откроется в периоде 5"
+    },
+    {
+      "id": "item_22",
+      "name": "Диплом Финни",
+      "emoji": "🎓",
+      "type": "reward",
+      "price": 0,
+      "category": "Награда",
+      "effects": {
+        "satiety": 10,
+        "cleanliness": 10,
+        "health": 10,
+        "mood": 10,
+        "comfort": 10,
+        "intellect": 10
+      },
+      "available_from_period": 5,
+      "unlocks": "Выдаётся при прохождении 5 периодов",
+      "passive_income_per_period": 0,
+      "lock_label": "Награда за прохождение 5 периодов"
+    },
+    {
+      "id": "item_23",
+      "name": "Водичка",
+      "emoji": "💧",
+      "type": "optional",
+      "price": 5,
+      "category": "Питание",
+      "effects": {
+        "satiety": 10
+      },
+      "available_from_period": 1,
+      "unlocks": null,
+      "passive_income_per_period": 0,
+      "lock_label": null
+    },
+    {
+      "id": "item_24",
+      "name": "Молоко",
+      "emoji": "🥛",
+      "type": "optional",
+      "price": 12,
+      "category": "Питание",
+      "effects": {
+        "satiety": 15
+      },
+      "available_from_period": 1,
+      "unlocks": null,
+      "passive_income_per_period": 0,
+      "lock_label": null
+    },
+    {
+      "id": "item_25",
+      "name": "Яблоко",
+      "emoji": "🍎",
+      "type": "optional",
+      "price": 8,
+      "category": "Питание",
+      "effects": {
+        "satiety": 12
+      },
+      "available_from_period": 1,
+      "unlocks": null,
+      "passive_income_per_period": 0,
+      "lock_label": null
+    },
+    {
+      "id": "item_26",
+      "name": "Рыбка",
+      "emoji": "🐟",
+      "type": "optional",
+      "price": 18,
+      "category": "Питание",
+      "effects": {
+        "satiety": 22
+      },
+      "available_from_period": 1,
+      "unlocks": null,
+      "passive_income_per_period": 0,
+      "lock_label": null
+    },
+    {
+      "id": "item_27",
+      "name": "Супчик",
+      "emoji": "🍲",
+      "type": "optional",
+      "price": 22,
+      "category": "Питание",
+      "effects": {
+        "satiety": 28
+      },
+      "available_from_period": 1,
+      "unlocks": null,
+      "passive_income_per_period": 0,
+      "lock_label": null
+    }
+  ],
+  "goals": [
+    {
+      "id": "goal_01",
+      "name": "Самокат",
+      "emoji": "🛴",
+      "cost": 500,
+      "pet_line": "Хочу кататься! Это большая мечта — но мы справимся",
+      "reward_effect": "Аксессуар «Шлем» + анимация езды",
+      "archetype_note": "Выбор долгосрочной цели (goal_01) даёт +2 Мечтателю",
+      "duration_hint": "~17 периодов при взносе 30/период, ~10 периодов при взносе 50/период"
+    },
+    {
+      "id": "goal_02",
+      "name": "Домик-дворец",
+      "emoji": "🏠",
+      "cost": 300,
+      "pet_line": "Моя нора — моя крепость. Немного монет каждую неделю",
+      "reward_effect": "Фон главного экрана",
+      "duration_hint": "~10 периодов при взносе 30/период, ~6 периодов при взносе 50/период"
+    },
+    {
+      "id": "goal_03",
+      "name": "День рождения",
+      "emoji": "🎂",
+      "cost": 200,
+      "pet_line": "Вечеринка сама себя не устроит. Копим!",
+      "reward_effect": "Анимация праздника + аксессуар «Колпак»",
+      "duration_hint": "~7 периодов при взносе 30/период, ~4 периода при взносе 50/период"
+    }
+  ],
+  "tasks": [
+    {
+      "code": "A1",
+      "period": 1,
+      "topic": "budget",
+      "title": "Первый план бюджета",
+      "format": "budget_threshold_check",
+      "trigger": "Нажатие «Подтвердить» при «Нужное» < 60 монет (сумма всех обязательных)",
+      "data": {
+        "needs_threshold": 60,
+        "trigger_line": "Стоп. Помнишь историю с мячиками? Мне нужно минимум 60 монет на еду, уход и витамины. Сейчас здесь {n}. Поправишь?",
+        "animation": "питомец смотрит на пустую миску"
+      },
+      "outcomes": [
+        {
+          "condition": "needs >= 60 и savings >= 20",
+          "line": "Отличный план! Нужное закрыто, копилка не пустая",
+          "reward": 15
+        },
+        {
+          "condition": "needs >= 60 и savings = 0",
+          "line": "Нужное закрыто — хорошо. Но копилка пустая. Отложишь хоть немного?",
+          "reward": 10
+        },
+        {
+          "condition": "needs >= 60 и savings 1–19",
+          "line": "Неплохо! Маленький взнос — но уже начало",
+          "reward": 12
+        }
+      ],
+      "explanation": null
+    },
+    {
+      "code": "A2",
+      "period": 2,
+      "topic": "budget",
+      "title": "Детектив бюджета",
+      "format": "plan_fact_table",
+      "data": {
+        "prompt": "Нажми на строку где перерасход",
+        "plan": {
+          "Еда": 25,
+          "Игрушки": 10,
+          "Копилка": 20
+        },
+        "fact": {
+          "Еда": 25,
+          "Игрушки": 35,
+          "Копилка": 0
+        }
+      },
+      "options": [
+        {
+          "id": "toys",
+          "label": "Игрушки",
+          "correct": true,
+          "reaction": "Точно! В 3 раза больше плана. Копилка пустая",
+          "reward": 15
+        },
+        {
+          "id": "other",
+          "label": "Другое",
+          "correct": false,
+          "reaction": "Сравни план и факт внимательнее",
+          "reward": 0,
+          "retry": true
+        }
+      ],
+      "explanation": "Факт — это зеркало твоих трат. Если не совпадает с планом — значит что-то потянуло в сторону"
+    },
+    {
+      "code": "B1",
+      "period": 3,
+      "topic": "saving",
+      "title": "Когда уже самокат?",
+      "format": "slider",
+      "data": {
+        "prompt": "Питомец хочет самокат за 500 монет. В копилке уже {n} монет. Подвигай ползунок — сколько будешь откладывать каждую неделю?",
+        "slider_min": 5,
+        "slider_max": 60,
+        "eta_template": "Срок: ~{k} недель",
+        "reactions": [
+          {
+            "range": [
+              5,
+              10
+            ],
+            "line": "Эх, больше 40 недель. Это почти год!"
+          },
+          {
+            "range": [
+              20,
+              30
+            ],
+            "line": "Около 15 недель. Неплохо!"
+          },
+          {
+            "range": [
+              50,
+              60
+            ],
+            "line": "Меньше 10 недель! Но хватит ли на еду?"
+          }
+        ],
+        "comfortable_range": [
+          10,
+          40
+        ],
+        "confirm_button": "Буду копить столько"
+      },
+      "reward": 15,
+      "explanation": "Маленькие шаги каждую неделю — и цель станет реальной"
+    },
+    {
+      "code": "B2",
+      "period": 2,
+      "topic": "saving",
+      "title": "Соблазн или копилка?",
+      "format": "story_choice",
+      "data": {
+        "prompt": "Питомец копит на самокат (собрал 80 из 500 монет). Хитрик-лисёнок говорит: «Смотри — крутые кроссовки за 60 монет! Бери из копилки!» Что делаешь?"
+      },
+      "options": [
+        {
+          "id": "a",
+          "text": "Взять 60 монет из копилки",
+          "correct": false,
+          "consequence": "Прогресс-бар уменьшается. Кроссовки есть. Но до самоката теперь дальше",
+          "reward": 5,
+          "archetype_points": {
+            "adventurer": 3
+          }
+        },
+        {
+          "id": "b",
+          "text": "Отказать Хитрику",
+          "correct": true,
+          "consequence": "Финни устоял! Копилка цела",
+          "reward": 15,
+          "archetype_points": {
+            "dreamer": 3
+          }
+        },
+        {
+          "id": "c",
+          "text": "Подождать следующей зарплаты",
+          "correct": true,
+          "consequence": "Умно! Не отказался от желания, но и копилку не тронул",
+          "reward": 12,
+          "archetype_points": {
+            "explorer": 2
+          }
+        }
+      ],
+      "explanation": "«Последний шанс» — это давление. Настоящий финансовый чемпион делает паузу"
+    },
+    {
+      "code": "C1",
+      "period": 3,
+      "topic": "payments",
+      "title": "Магазин закрывается",
+      "format": "timer_catalog",
+      "data": {
+        "balance": 70,
+        "timer_seconds": 60,
+        "npc_line": "Берите всё, потом пожалеете!",
+        "catalog": [
+          {
+            "name": "Корм",
+            "emoji": "🍖",
+            "price": 25,
+            "kind": "mandatory"
+          },
+          {
+            "name": "Расчёска",
+            "emoji": "🪮",
+            "price": 15,
+            "kind": "mandatory"
+          },
+          {
+            "name": "Мячик",
+            "emoji": "⚽",
+            "price": 30,
+            "kind": "optional"
+          },
+          {
+            "name": "Значок",
+            "emoji": "⭐",
+            "price": 10,
+            "kind": "optional"
+          }
+        ],
+        "reveal_line": "Кстати, магазин не закрывался. Продавец просто торопил — это называется давление срочности"
+      },
+      "outcomes": [
+        {
+          "condition": "Корм + Расчёска + Значок = 50",
+          "line": "Финни не поддался панике! Купил нужное. Продавец расстроился",
+          "reward": 15
+        },
+        {
+          "condition": "Мячик + всё необязательное, нет корма",
+          "line": "Таймер давил — и мозг выбрал не то",
+          "reward": 5
+        }
+      ],
+      "explanation": "Когда кто-то торопит с покупкой — это тревожный знак"
+    },
+    {
+      "code": "C2",
+      "period": 1,
+      "topic": "payments",
+      "title": "Сначала нужное",
+      "format": "trigger_plus_swipe_cards",
+      "trigger": {
+        "condition": "Нажал «Купить» на необязательном, не купив ни одного обязательного",
+        "pet_line": "Подожди! Я ещё не поел и не умылся. Может, сначала — нужное?",
+        "options": [
+          {
+            "id": "needs_first",
+            "text": "Сначала нужное",
+            "consequence": "Возврат к каталогу, обязательные подсвечены",
+            "reward": 8
+          },
+          {
+            "id": "buy_anyway",
+            "text": "Всё равно куплю",
+            "consequence": "Покупка проходит",
+            "reward": 0,
+            "note": "Комментарий в итогах"
+          }
+        ]
+      },
+      "data": {
+        "prompt": "Давай проверим — ты разобрался что мне нужно, а что просто приятно? Свайпай",
+        "swipe_left": "нужное",
+        "swipe_right": "хочу",
+        "cards": [
+          {
+            "label": "Корм",
+            "correct": "нужное"
+          },
+          {
+            "label": "Шампунь",
+            "correct": "нужное"
+          },
+          {
+            "label": "Ошейник",
+            "correct": "хочу"
+          },
+          {
+            "label": "Кроссовки",
+            "correct": "хочу"
+          },
+          {
+            "label": "Билет",
+            "correct": "хочу"
+          },
+          {
+            "label": "Наклейки",
+            "correct": "хочу"
+          }
+        ]
+      },
+      "outcomes": [
+        {
+          "condition": "Все верно",
+          "reward": 15,
+          "line": "Ты меня понимаешь! Это главное"
+        },
+        {
+          "condition": "1–2 ошибки",
+          "reward": 8,
+          "line": "Почти! Вот эти — подумай ещё раз"
+        },
+        {
+          "condition": "3+ ошибок",
+          "reward": 3,
+          "line": null,
+          "note": "Разбор каждой карточки"
+        }
+      ],
+      "explanation": null
+    },
+    {
+      "code": "D1",
+      "period": 2,
+      "topic": "payments",
+      "title": "Хитрик разоблачён",
+      "format": "find_fake_ad",
+      "data": {
+        "prompt": "Найди объявление с обманом",
+        "ads": [
+          {
+            "id": 1,
+            "text": "Корм для питомца — 25 монет",
+            "fake": false
+          },
+          {
+            "id": 2,
+            "text": "Витамины — СКИДКА 50%! Было 40, стало 30 монет",
+            "fake": true,
+            "note": "реальная цена всегда была 30"
+          },
+          {
+            "id": 3,
+            "text": "Мячик — 30 монет",
+            "fake": false
+          }
+        ]
+      },
+      "options": [
+        {
+          "id": "ad_2",
+          "correct": true,
+          "reaction": "Точно! 50% скидка, а цена как обычно",
+          "reward": 15
+        },
+        {
+          "id": "other",
+          "correct": false,
+          "reaction": "Подсказка от питомца",
+          "reward": 0,
+          "retry": true
+        }
+      ],
+      "explanation": "Продавцы иногда пишут «скидка» — но цена не меняется. Всегда сравнивай с обычной ценой"
+    },
+    {
+      "code": "E1",
+      "period": 3,
+      "topic": "budget",
+      "title": "Инвестиция или трата?",
+      "format": "compare_calculation",
+      "data": {
+        "prompt": "У питомца 40 монет. Два варианта. Что выгоднее через 5 недель? Посчитай вместе с питомцем",
+        "option_a": {
+          "label": "Курс рисования",
+          "detail": "открывает профессию +30 монет/период",
+          "calculation": "−40 сейчас → +30 × 5 = +150"
+        },
+        "option_b": {
+          "label": "Мороженое каждый день",
+          "detail": "удовольствие сейчас, монеты уходят",
+          "calculation": "−40 → 0 через 5 недель"
+        },
+        "new_term": "investment"
+      },
+      "options": [
+        {
+          "id": "course",
+          "text": "Курс",
+          "correct": true,
+          "reaction": "Это инвестиция. Вложил сейчас — получаешь больше потом",
+          "reward": 15
+        },
+        {
+          "id": "icecream",
+          "text": "Мороженое",
+          "correct": false,
+          "reaction": "Это трата на удовольствие. Тоже важно — но денег не прибавляет",
+          "reward": 10
+        }
+      ],
+      "explanation": null
+    },
+    {
+      "code": "F1",
+      "period": 4,
+      "topic": "saving",
+      "title": "Пассивный доход",
+      "format": "compare_calculation",
+      "data": {
+        "prompt": "У питомца 50 монет. Два варианта. Что выгоднее через 10 недель?",
+        "option_a": {
+          "label": "Огородик",
+          "detail": "+8 монет каждую неделю пассивно",
+          "calculation": "−50 → +80 за 10 недель. Итого: +30 чистыми"
+        },
+        "option_b": {
+          "label": "Мороженое каждый день",
+          "detail": "приятно сейчас, монеты уходят",
+          "calculation": "−50 → 0"
+        },
+        "new_term": "passive_income"
+      },
+      "options": [
+        {
+          "id": "garden",
+          "text": "Огородик",
+          "correct": true,
+          "reaction": "Пассивный доход! Вложил — и оно работает само",
+          "reward": 15
+        },
+        {
+          "id": "icecream",
+          "text": "Мороженое",
+          "correct": false,
+          "reaction": "Вкусно. Но через 10 недель — 0 монет от этого решения",
+          "reward": 8
+        }
+      ],
+      "explanation": null
+    },
+    {
+      "code": "F2",
+      "period": 4,
+      "topic": "payments",
+      "title": "Найди мошенника",
+      "format": "find_fake_ad",
+      "data": {
+        "prompt": "Три объявления. Одно — мошенничество",
+        "ads": [
+          {
+            "id": 1,
+            "text": "Велосипед — 45 монет, доставка за 3 дня",
+            "fake": false
+          },
+          {
+            "id": 2,
+            "text": "Вложи 20 монет — получи 200 за день! Гарантия!",
+            "fake": true
+          },
+          {
+            "id": 3,
+            "text": "Курс рисования — 35 монет, длительность 2 недели",
+            "fake": false
+          }
+        ],
+        "new_term": "fraud"
+      },
+      "options": [
+        {
+          "id": "ad_2",
+          "correct": true,
+          "reaction": "Точно! Никто не может гарантировать 200 монет за день",
+          "reward": 15
+        },
+        {
+          "id": "other",
+          "correct": false,
+          "reaction": "Подсказка от питомца",
+          "reward": 0,
+          "retry": true
+        }
+      ],
+      "explanation": null
+    },
+    {
+      "code": "G1",
+      "period": 5,
+      "topic": "review",
+      "topic_note": "Все темы (рефлексия)",
+      "title": "Пять недель за 2 минуты",
+      "format": "choice_with_consequences",
+      "data": {
+        "prompt": "Питомец вспоминает пять недель. В каждой неделе — одно решение. Выбери которое было САМОЙ ДОРОГОЙ ошибкой. Какая ошибка стоила дороже всего?",
+        "weeks": [
+          {
+            "week": 1,
+            "mistake": "Не отложил в копилку",
+            "cost": 20,
+            "cost_note": "−20 монет к сроку цели"
+          },
+          {
+            "week": 2,
+            "mistake": "Купил у Хитрика по завышенной цене",
+            "cost": 5,
+            "cost_note": "−5 монет"
+          },
+          {
+            "week": 3,
+            "mistake": "Не сделал резерв (ремонт стоил дороже)",
+            "cost": 15,
+            "cost_note": "−15 монет"
+          },
+          {
+            "week": 4,
+            "mistake": "Вложил в псевдоинвестицию",
+            "cost": 50,
+            "cost_note": "−50 монет"
+          },
+          {
+            "week": 5,
+            "mistake": "текущая неделя",
+            "cost": null,
+            "cost_note": null
+          }
+        ]
+      },
+      "options": [
+        {
+          "id": "week_4",
+          "correct": true,
+          "reaction": "Точно! Потеря 50 монет — самая дорогая. Мошенничество бьёт сильно",
+          "reward": 15
+        },
+        {
+          "id": "week_3",
+          "correct": false,
+          "reaction": "Резерв важен. Но 15 монет меньше чем 50. Посмотри внимательнее",
+          "reward": 0,
+          "retry": true
+        },
+        {
+          "id": "other",
+          "correct": false,
+          "reaction": "Пояснение с суммами",
+          "reward": 0,
+          "retry": true
+        }
+      ],
+      "explanation": "Финансовые ошибки имеют цену. Мошенничество — самая дорогая. Поэтому умение распознавать его — бесценно"
+    },
+    {
+      "code": "G2",
+      "period": 5,
+      "topic": "budget",
+      "title": "Советник Зайчика",
+      "format": "advice_cards",
+      "data": {
+        "prompt": "Зайчик получил 100 монет. Он спрашивает: «Что делать?» Выбери ТРИ лучших совета из шести карточек",
+        "pick": 3,
+        "cards": [
+          {
+            "id": "c1",
+            "text": "Сначала закрой обязательные расходы",
+            "good": true
+          },
+          {
+            "id": "c2",
+            "text": "Отложи хотя бы 20 монет в копилку",
+            "good": true
+          },
+          {
+            "id": "c3",
+            "text": "Потрать всё сразу — наслаждайся",
+            "good": false
+          },
+          {
+            "id": "c4",
+            "text": "Поставь финансовую цель",
+            "good": true
+          },
+          {
+            "id": "c5",
+            "text": "Займи у друга если не хватает",
+            "good": false
+          },
+          {
+            "id": "c6",
+            "text": "Купи что хочется первым делом",
+            "good": false
+          }
+        ]
+      },
+      "outcomes": [
+        {
+          "condition": "3 верных совета",
+          "reward": 15,
+          "line": "Отличные советы! Зайчик всё понял"
+        },
+        {
+          "condition": "2 верных",
+          "reward": 8,
+          "line": "Почти! Один совет неудачный — найди его"
+        },
+        {
+          "condition": "1 или 0 верных",
+          "reward": 3,
+          "line": null,
+          "note": "Разбор каждого совета"
+        }
+      ],
+      "explanation": "Хороший совет — тот, который работает долго, а не только сейчас"
+    }
+  ],
+  "hitrik_scenes": [
+    {
+      "id": "hitrik_p2_shop",
+      "period": 2,
+      "trigger": "В магазине",
+      "scheme": "inflated_price",
+      "scene": "Хитрик выпрыгивает из-за полки",
+      "hitrik_line": "Псс! Только для тебя — мячик за 35 монет. Обычно стоит 30, но сейчас СУПЕРЦЕНА! Бери скорее!",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Купить — звучит выгодно",
+          "correct": false,
+          "consequence": "Хитрик продал дороже. Мячик стоит 30 монет",
+          "coins_delta": -35,
+          "archetype_points": {
+            "adventurer": 3
+          }
+        },
+        {
+          "id": "b",
+          "text": "Подождать — цена выше обычной",
+          "correct": true,
+          "consequence": "Ты заметил! Это была ловушка",
+          "coins_delta": 10,
+          "archetype_points": {
+            "explorer": 3
+          }
+        },
+        {
+          "id": "c",
+          "text": "Проверить цену в каталоге",
+          "correct": true,
+          "consequence": "Точно! В каталоге — 30. Хитрик врёт",
+          "coins_delta": 12,
+          "archetype_points": {
+            "explorer": 3
+          },
+          "unlocks": "Функция «Сравнить цены»"
+        }
+      ],
+      "explanation": null
+    },
+    {
+      "id": "hitrik_p2_salary",
+      "period": 2,
+      "trigger": "После зарплаты",
+      "scheme": "urgency",
+      "scene": "Хитрик с плакатом «ТОЛЬКО СЕГОДНЯ»",
+      "hitrik_line": "Финни! Курс по рисованию — всего 40 монет! Завтра закроется запись навсегда!",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Купить сразу",
+          "correct": false,
+          "consequence": "−40 монет; обязательные могут не уложиться",
+          "coins_delta": -40,
+          "archetype_points": {
+            "adventurer": 3
+          }
+        },
+        {
+          "id": "b",
+          "text": "Сначала закрыть обязательные расходы",
+          "correct": true,
+          "consequence": "Умно! Давление срочности — старый трюк",
+          "coins_delta": 10,
+          "archetype_points": {
+            "responsible": 3
+          }
+        },
+        {
+          "id": "c",
+          "text": "Спросить питомца",
+          "correct": true,
+          "consequence": null,
+          "pet_line": "«Последний день» — почти всегда обман",
+          "coins_delta": 8,
+          "archetype_points": {
+            "explorer": 2
+          }
+        }
+      ],
+      "explanation": null
+    },
+    {
+      "id": "hitrik_p3_social",
+      "period": 3,
+      "trigger": "Социальное давление",
+      "scheme": "social_pressure",
+      "scene": "Хитрик с толпой силуэтов за спиной",
+      "hitrik_line": "Финни! Все твои друзья уже купили новый гаджет за 60 монет. Только ты без него. Не будешь же отставать?",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Купить — не хочу отставать",
+          "correct": false,
+          "consequence": "Хитрик соврал. Никто ничего не купил",
+          "coins_delta": -60,
+          "archetype_points": {
+            "adventurer": 3
+          }
+        },
+        {
+          "id": "b",
+          "text": "Подождать — это не в моём плане",
+          "correct": true,
+          "consequence": "«Все купили» — почти всегда неправда",
+          "coins_delta": 10,
+          "archetype_points": {
+            "explorer": 3
+          }
+        },
+        {
+          "id": "c",
+          "text": "Спросить питомца — правда ли все купили",
+          "correct": true,
+          "consequence": null,
+          "pet_line": "Никто ничего не купил. Хитрик давит",
+          "coins_delta": 12,
+          "archetype_points": {
+            "explorer": 3
+          }
+        }
+      ],
+      "explanation": null
+    },
+    {
+      "id": "hitrik_p4_pseudo",
+      "period": 4,
+      "trigger": "Псевдоинвестиция",
+      "scheme": "pseudo_investment",
+      "scene": "Хитрик с красивой брошюрой и блестящими глазами",
+      "hitrik_line": "Финни! Вложи 50 монет — через неделю получишь 100! ГАРАНТИЯ 100%! Только сегодня!",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Вложить — звучит выгодно",
+          "correct": false,
+          "consequence": "Хитрик исчезает. Через неделю — тишина",
+          "coins_delta": -50,
+          "archetype_points": {
+            "adventurer": 3
+          }
+        },
+        {
+          "id": "b",
+          "text": "Отказать — слишком хорошо чтобы быть правдой",
+          "correct": true,
+          "consequence": "Правильно! Гарантия удвоения за неделю — мошенничество",
+          "coins_delta": 15,
+          "archetype_points": {
+            "explorer": 3
+          }
+        },
+        {
+          "id": "c",
+          "text": "Спросить питомца",
+          "correct": true,
+          "consequence": null,
+          "pet_line": "Огромная прибыль быстро — почти всегда обман",
+          "coins_delta": 12,
+          "archetype_points": {
+            "explorer": 3
+          }
+        }
+      ],
+      "explanation": "Реальные инвестиции работают медленно и без гарантий. «Гарантия 100%» — ловушка"
+    },
+    {
+      "id": "hitrik_p5_final",
+      "period": 5,
+      "trigger": "Финальное испытание",
+      "scheme": "all_three",
+      "scene": "Хитрик с тремя плакатами одновременно. «ФИННИ! ПОСЛЕДНИЙ ШАНС!»",
+      "hitrik_line": "Плакат 1: «Мячик за 35 монет — СУПЕРЦЕНА!» (обычная 30). Плакат 2: «Все твои друзья уже вложили в мой фонд». Плакат 3: «Вложи 50 монет — гарантия 300% за 2 дня!»",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Купить мячик по «суперцене»",
+          "correct": false,
+          "consequence": "Переплата 5 монет",
+          "coins_delta": -35,
+          "archetype_points": {
+            "adventurer": 3
+          }
+        },
+        {
+          "id": "b",
+          "text": "Вложить в фонд",
+          "correct": false,
+          "consequence": "Хитрик исчезает",
+          "coins_delta": -50,
+          "archetype_points": {
+            "adventurer": 3
+          }
+        },
+        {
+          "id": "c",
+          "text": "Проигнорировать всё",
+          "correct": true,
+          "consequence": "Молодец! Все три — ловушки",
+          "coins_delta": 15,
+          "archetype_points": {
+            "explorer": 3
+          }
+        },
+        {
+          "id": "d",
+          "text": "Разоблачить — назвать все три трюка",
+          "correct": true,
+          "consequence": "Ты разоблачил все схемы! Финансовый детектив!",
+          "coins_delta": 25,
+          "archetype_points": {
+            "explorer": 5
+          }
+        }
+      ],
+      "explanation": "Трюк 1: Завышенная цена под видом скидки. Трюк 2: Социальное давление («все купили»). Трюк 3: Псевдоинвестиция с гарантией. Ты знаешь все три. Хитрик больше не сможет тебя обмануть."
+    }
+  ],
+  "events": [
+    {
+      "id": "ev_2a",
+      "period": 2,
+      "title": "Найденный кошелёк",
+      "emoji": "🪙",
+      "tone": "positive",
+      "situation": "Питомец нашёл кошелёк с 30 монетами. Внутри — записка с адресом хозяина.",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Оставить — нашёл значит моё",
+          "correct": false,
+          "outcome": "Хозяин — сосед-торговец. Скидки больше не даёт (−5 монет в магазине на 1 период)",
+          "coins_delta": 30,
+          "delayed_effects": [
+            {
+              "periods": 1,
+              "shop_discount_delta": -5
+            }
+          ],
+          "archetype_points": {
+            "adventurer": 3
+          }
+        },
+        {
+          "id": "b",
+          "text": "Вернуть хозяину",
+          "correct": true,
+          "outcome": "Хозяин благодарит, даёт награду",
+          "coins_delta": 50,
+          "archetype_points": {
+            "responsible": 3
+          }
+        },
+        {
+          "id": "c",
+          "text": "Вернуть половину",
+          "correct": false,
+          "outcome": "Частичная скидка у торговца",
+          "coins_delta": 25,
+          "archetype_points": {
+            "explorer": 2
+          }
+        }
+      ],
+      "pet_line": "Видишь? Честность иногда выгоднее, чем кажется",
+      "rollback_available": false
+    },
+    {
+      "id": "ev_2b",
+      "period": 2,
+      "title": "Сломался самокат друга",
+      "emoji": "⚠️",
+      "tone": "negative",
+      "situation": "Друг питомца сломал самокат. Починка стоит 20 монет. Свободных денег у друга нет.",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Дать 20 монет из баланса",
+          "correct": true,
+          "outcome": "Друг возвращает 25 монет в периоде 3",
+          "coins_delta": -20,
+          "delayed_effects": [
+            {
+              "period": 3,
+              "coins_delta": 25
+            }
+          ],
+          "archetype_points": {
+            "responsible": 3
+          }
+        },
+        {
+          "id": "b",
+          "text": "Дать 10 монет — сколько можешь",
+          "correct": false,
+          "outcome": "Друг возвращает 10 монет в периоде 3",
+          "coins_delta": -10,
+          "delayed_effects": [
+            {
+              "period": 3,
+              "coins_delta": 10
+            }
+          ],
+          "archetype_points": {
+            "dreamer": 2
+          }
+        },
+        {
+          "id": "c",
+          "text": "Отказать",
+          "correct": false,
+          "outcome": "Друг справился сам. Нейтрально",
+          "coins_delta": 0,
+          "archetype_points": {
+            "adventurer": 2
+          }
+        }
+      ],
+      "pet_line": "Иногда помочь другу — это тоже финансовое решение",
+      "rollback_available": false
+    },
+    {
+      "id": "ev_3a",
+      "period": 3,
+      "title": "Что-то сломалось",
+      "emoji": "🔧",
+      "tone": "negative",
+      "situation": "Домик-лежанка питомца сломался. Починка стоит 25 монет. Без починки — комфорт падает, питомец хуже спит.",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Починить из баланса (25 монет)",
+          "correct": true,
+          "outcome": "Починено. Комфорт восстановлен",
+          "coins_delta": -25,
+          "delta_source": "balance",
+          "archetype_points": {
+            "responsible": 3
+          }
+        },
+        {
+          "id": "b",
+          "text": "Взять из копилки (25 монет)",
+          "correct": false,
+          "outcome": "Починено. Цель отдаляется",
+          "coins_delta": -25,
+          "delta_source": "savings",
+          "archetype_points": {
+            "adventurer": 2
+          }
+        },
+        {
+          "id": "c",
+          "text": "Подождать — может само пройдёт",
+          "correct": false,
+          "outcome": "Через 2 периода ремонт стоит 40 монет",
+          "coins_delta": 0,
+          "delayed_effects": [
+            {
+              "in_periods": 2,
+              "coins_delta": -40,
+              "note": "ремонт подорожал"
+            }
+          ],
+          "archetype_points": {
+            "adventurer": 3
+          }
+        },
+        {
+          "id": "d",
+          "text": "Использовать ремонтный набор",
+          "requires_item": "item_14",
+          "correct": true,
+          "outcome": "Бесплатный ремонт",
+          "coins_delta": 0,
+          "archetype_points": {
+            "explorer": 3
+          }
+        }
+      ],
+      "pet_line": "Резерв и ремонтный набор — это страховка. Ответственный планирует заранее",
+      "rollback_hint_line": "Если бы был резерв или набор — монеты бы не ушли. Хочешь попробовать иначе? Есть кнопка отката — но поломка всё равно случится",
+      "rollback_available": false
+    },
+    {
+      "id": "ev_3b",
+      "period": 3,
+      "title": "Конкурс рисунков",
+      "emoji": "🎨",
+      "tone": "positive",
+      "situation": "Питомец узнал о конкурсе. Участие бесплатное. Приз — 80 монет. Подготовка займёт время.",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Участвовать без подготовки",
+          "correct": false,
+          "outcome": "3-е место",
+          "coins_delta": 30,
+          "archetype_points": {
+            "creator": 2
+          }
+        },
+        {
+          "id": "b",
+          "text": "Участвовать и хорошо подготовиться",
+          "correct": true,
+          "outcome": "2-е место",
+          "coins_delta": 50,
+          "archetype_points": {
+            "creator": 3
+          }
+        },
+        {
+          "id": "c",
+          "text": "Купить курс рисования и потом участвовать",
+          "requires_purchase": "item_11",
+          "correct": true,
+          "outcome": "1-е место (курс помог); курс остаётся",
+          "coins_delta": 45,
+          "coins_note": "+80 −35 = +45 чистыми",
+          "archetype_points": {
+            "creator": 3,
+            "explorer": 2
+          }
+        },
+        {
+          "id": "d",
+          "text": "Пропустить",
+          "correct": false,
+          "outcome": "Конкурс прошёл мимо",
+          "coins_delta": 0,
+          "archetype_points": {
+            "responsible": 1
+          }
+        }
+      ],
+      "pet_line": null,
+      "rollback_available": false
+    },
+    {
+      "id": "ev_4a",
+      "period": 4,
+      "title": "Турнир",
+      "emoji": "🎮",
+      "tone": "positive",
+      "situation": "Объявлен турнир. Участие: 15 монет. Приз: 60 монет. Шанс победы зависит от подготовки.",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Участвовать без подготовки",
+          "correct": false,
+          "outcome": "3-е место",
+          "coins_delta": 5,
+          "coins_note": "−15 +20 = +5",
+          "archetype_points": {
+            "adventurer": 2
+          }
+        },
+        {
+          "id": "b",
+          "text": "Участвовать и потренироваться",
+          "correct": true,
+          "outcome": "1-е место",
+          "coins_delta": 45,
+          "coins_note": "−15 +60 = +45",
+          "archetype_points": {
+            "creator": 3
+          }
+        },
+        {
+          "id": "c",
+          "text": "Пропустить",
+          "correct": false,
+          "outcome": "Турнир прошёл",
+          "coins_delta": 0,
+          "archetype_points": {
+            "responsible": 1
+          }
+        }
+      ],
+      "perk_interaction": "Авантюрист-перк: +20% к шансу — при выборе A тоже получает 1-е место",
+      "pet_line": null,
+      "rollback_available": false
+    },
+    {
+      "id": "ev_4b",
+      "period": 4,
+      "title": "Болезнь питомца",
+      "emoji": "🤒",
+      "tone": "negative",
+      "situation": "Питомец чихает и кашляет. Визит к врачу: 30 монет. Без лечения — здоровье падает, развитие замедляется.",
+      "prompt": "Что делаешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Сходить к врачу сразу (30 монет)",
+          "correct": true,
+          "outcome": "Быстрое выздоровление",
+          "coins_delta": -30,
+          "archetype_points": {
+            "responsible": 3
+          }
+        },
+        {
+          "id": "b",
+          "text": "Подождать 2 дня",
+          "correct": false,
+          "outcome": "Стало хуже. Врач теперь 45 монет",
+          "coins_delta": -45,
+          "archetype_points": {
+            "adventurer": 2
+          }
+        },
+        {
+          "id": "c",
+          "text": "Дать витамины, если есть",
+          "requires_item": "item_03",
+          "correct": true,
+          "outcome": "Частичное лечение. Врач 15 монет",
+          "coins_delta": -15,
+          "archetype_points": {
+            "explorer": 3
+          }
+        },
+        {
+          "id": "d",
+          "text": "Использовать страховку",
+          "requires_item": "item_19",
+          "correct": true,
+          "outcome": "Страховка покрыла половину (15 монет вместо 30)",
+          "coins_delta": -15,
+          "archetype_points": {
+            "responsible": 3
+          }
+        }
+      ],
+      "pet_line": "Страховка и профилактика дешевле лечения",
+      "rollback_available": false
+    },
+    {
+      "id": "ev_5a",
+      "period": 5,
+      "title": "Городская ярмарка",
+      "emoji": "🌟",
+      "tone": "positive",
+      "big": true,
+      "situation": "Питомцу предложили участие в городской ярмарке.",
+      "prompt": "Что выбираешь?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Продавать рисунки",
+          "investment": 20,
+          "outcomes_by_archetype": {
+            "dreamer": {
+              "coins": 60,
+              "note": "вдохновение помогает"
+            },
+            "explorer": {
+              "coins": 70,
+              "note": "нашёл выгодных клиентов"
+            },
+            "adventurer": {
+              "coins_range": [
+                40,
+                90
+              ],
+              "note": "случайно"
+            },
+            "responsible": {
+              "coins": 65,
+              "note": "стабильно"
+            },
+            "creator": {
+              "coins": 80,
+              "note": "лучшие рисунки"
+            }
+          }
+        },
+        {
+          "id": "b",
+          "text": "Открыть лоток с едой",
+          "investment": 40,
+          "outcomes_by_archetype": {
+            "dreamer": {
+              "coins": 80
+            },
+            "explorer": {
+              "coins": 100
+            },
+            "adventurer": {
+              "coins_range": [
+                50,
+                120
+              ],
+              "note": "случайно"
+            },
+            "responsible": {
+              "coins": 85,
+              "note": "стабильно"
+            },
+            "creator": {
+              "coins": 70
+            }
+          }
+        },
+        {
+          "id": "c",
+          "text": "Не участвовать",
+          "investment": 0,
+          "income": 0
+        }
+      ],
+      "pet_line": "Видишь? Твой характер повлиял на результат. Ты — {архетип}. Это твоя сила",
+      "rollback_available": false
+    }
+  ],
+  "archetypes": [
+    {
+      "id": "dreamer",
+      "name": "Мечтатель",
+      "emoji": "🌟",
+      "scoring": [
+        {
+          "action": "Взнос в копилку > 20 монет",
+          "points": 3
+        },
+        {
+          "action": "Выбор долгосрочной цели (goal_01)",
+          "points": 2
+        },
+        {
+          "action": "Отказ от снятия с накоплений",
+          "points": 2
+        }
+      ],
+      "perk": {
+        "id": "piggy_boost",
+        "name": "Копилка +10%",
+        "param": 10,
+        "description": "Каждый взнос увеличивается на 10%"
+      },
+      "final_line": "Ты всегда смотришь вперёд. Твоя копилка — доказательство. Продолжай мечтать и копить"
+    },
+    {
+      "id": "explorer",
+      "name": "Исследователь",
+      "emoji": "🔍",
+      "scoring": [
+        {
+          "action": "Сравнение товаров перед покупкой",
+          "points": 3
+        },
+        {
+          "action": "Устоял перед Хитриком",
+          "points": 3
+        },
+        {
+          "action": "Купил обучающий курс",
+          "points": 2
+        }
+      ],
+      "perk": {
+        "id": "shop_discount",
+        "name": "Скидка 5 монет",
+        "param": 5,
+        "description": "На один товар в магазине за период"
+      },
+      "final_line": "Ты не покупаешь не думая. Ты изучаешь и выбираешь лучшее. Хитрик тебя боится"
+    },
+    {
+      "id": "adventurer",
+      "name": "Авантюрист",
+      "emoji": "⚡",
+      "scoring": [
+        {
+          "action": "Покупка у Хитрика",
+          "points": 3
+        },
+        {
+          "action": "Выбор рискованного варианта события",
+          "points": 2
+        },
+        {
+          "action": "Участие в турнире",
+          "points": 2
+        }
+      ],
+      "perk": {
+        "id": "positive_outcome_boost",
+        "name": "+20% к позитивному исходу",
+        "param": 20,
+        "description": "Случайные события чаще дают лучший результат"
+      },
+      "final_line": "Ты любишь риск. Это круто — если знаешь когда остановиться. Ты учишься"
+    },
+    {
+      "id": "responsible",
+      "name": "Ответственный",
+      "emoji": "🛡️",
+      "scoring": [
+        {
+          "action": "Все обязательные закрыты",
+          "points": 3
+        },
+        {
+          "action": "Факт ≈ план ±10%",
+          "points": 2
+        },
+        {
+          "action": "Использован резерв по назначению",
+          "points": 2
+        }
+      ],
+      "perk": {
+        "id": "cashback",
+        "name": "Кешбэк 5 монет",
+        "param": 5,
+        "description": "За каждый период где все обязательные закрыты"
+      },
+      "final_line": "Я никогда не был голодным пять недель подряд. Это ты. Спасибо"
+    },
+    {
+      "id": "creator",
+      "name": "Творец",
+      "emoji": "🎨",
+      "scoring": [
+        {
+          "action": "Выбор профессии «Художник» или «Иллюстратор»",
+          "points": 2
+        },
+        {
+          "action": "Разблокировка аксессуара",
+          "points": 2
+        },
+        {
+          "action": "Победа в конкурсе рисунков",
+          "points": 3
+        }
+      ],
+      "perk": {
+        "id": "accessory_discount",
+        "name": "Аксессуары −10 монет",
+        "param": 10,
+        "description": "Новые аксессуары дешевле"
+      },
+      "final_line": "Ты сделал меня красивым и нашёл работу по душе. Деньги и творчество — не враги"
+    }
+  ],
+  "archetype_rules": {
+    "active_from_period": 2,
+    "fixation_rule": "Статус фиксируется, если шкала доминирует 3 периода подряд",
+    "dominance_periods": 3
+  },
+  "glossary": [
+    {
+      "id": "income",
+      "term": "Доход",
+      "emoji": "💰",
+      "trigger": "Период 1, фаза 2, экран 3 (получение дохода)",
+      "text": "Это монеты которые к тебе пришли.\n\nТы поработал — получил монеты.\nЭто твой доход.\n\nПример от питомца:\n«Я нарисовал картину и получил\nза неё 60 монет. Это мой доход\nза эту неделю»\n\nДоход — это приход, не расход.\nСначала зарабатываешь —\nпотом тратишь."
+    },
+    {
+      "id": "expense",
+      "term": "Расход",
+      "emoji": "🛒",
+      "trigger": "Период 1, фаза 7, первая карточка товара",
+      "text": "Это монеты которые от тебя ушли.\n\nКупил еду — монеты ушли.\nЭто расход.\n\nПример от питомца:\n«Однажды я потратил все монеты\nна мячики. Расходы съели\nвесь мой доход за один день»\n\nРасходы не должны быть больше\nдохода. Иначе — пусто."
+    },
+    {
+      "id": "mandatory_expenses",
+      "term": "Обязательные расходы",
+      "emoji": "🔴",
+      "trigger": "Период 1, фаза 6, красная корзина",
+      "text": "Это то, без чего питомцу плохо.\nКаждую неделю — обязательно.\n\nЕда, уход, здоровье —\nэто обязательные расходы.\n\n«Если ты не купишь мне еду —\nя буду голодным. Это не каприз,\nэто необходимость»\n\nСначала — обязательное.\nПотом — всё остальное."
+    },
+    {
+      "id": "optional_expenses",
+      "term": "Необязательные расходы",
+      "emoji": "🟡",
+      "trigger": "Период 1, фаза 6, жёлтая корзина",
+      "text": "Приятные вещи —\nно без них можно обойтись.\n\nМячик, бантик, наклейка —\nнеобязательные расходы.\n\n«Мячик мне нравится. Но если\nмонет мало — я подожду.\nГлавное чтобы была еда»\n\nОтказ от необязательного —\nэто не потеря. Это умный выбор."
+    },
+    {
+      "id": "budget",
+      "term": "Бюджет",
+      "emoji": "📋",
+      "trigger": "Период 1, фаза 6, после распределения",
+      "text": "Это план для твоих монет.\n\nРешаешь заранее — сколько\nна нужное, на хочу, в копилку.\n\n«Мой друг Пёсик не планировал.\nКаждую неделю то густо, то пусто.\nА у меня — бюджет.\nИ всегда хватает»\n\nБюджет составляется ДО того,\nкак начинаешь тратить."
+    },
+    {
+      "id": "plan",
+      "term": "План",
+      "emoji": "✅",
+      "trigger": "Период 1, фаза 6, кнопка «Подтвердить»",
+      "text": "Это решение принятое заранее.\n\nТы написал план —\nтеперь стараешься его держать.\n\n«Курьер планирует маршрут\nдо выхода из дома.\nЯ планирую траты\nдо похода в магазин»\n\nЛучше держаться плана —\nтогда монеты не утекают."
+    },
+    {
+      "id": "fact",
+      "term": "Факт",
+      "emoji": "🔍",
+      "trigger": "Период 1, фаза 9, блок «План vs Факт»",
+      "text": "Это то, что вышло на самом деле.\n\nПланировал 20 монет на развлечения\n— потратил 35. Факт = 35.\n\n«Я сравниваю план и факт\nкаждую неделю. Если совпадают —\nя молодец. Если нет — думаю почему»\n\nФакт — это зеркало.\nОн показывает как было на самом деле."
+    },
+    {
+      "id": "savings",
+      "term": "Накопления",
+      "emoji": "🟢",
+      "trigger": "Период 1, фаза 6, зелёная корзина",
+      "text": "Монеты которые ты откладываешь\nи пока не тратишь.\n\nКаждую неделю — немного в копилку.\nПостепенно набирается на мечту.\n\n«Я откладываю по 20 монет\nкаждую неделю. Кажется мало —\nно через 10 недель уже 200 монет!»\n\nНакопления — это монеты\nкоторые работают на будущее."
+    },
+    {
+      "id": "financial_goal",
+      "term": "Финансовая цель",
+      "emoji": "🎯",
+      "trigger": "Период 1, фаза 8, выбор цели",
+      "text": "Это то, ради чего ты копишь.\n\nУ цели есть цена и срок.\nЭто делает мечту реальной.\n\n«Я хочу самокат за 500 монет.\nКаждую неделю откладываю —\nи цель становится ближе»\n\nМечта без цены — просто мечта.\nМечта с ценой и копилкой —\nэто уже цель."
+    },
+    {
+      "id": "balance",
+      "term": "Баланс",
+      "emoji": "⚖️",
+      "trigger": "Период 1, фаза 5, первое появление цифры",
+      "text": "Это сколько монет у тебя есть\nпрямо сейчас.\n\nНе считая копилку —\nтолько то, что можно потратить.\n\n«Я получил 80 монет.\nКупил еду за 25 монет.\nБаланс стал 55 монет»\n\nСледи за балансом —\nне уходи в минус."
+    },
+    {
+      "id": "game_period",
+      "term": "Игровой период",
+      "emoji": "📅",
+      "trigger": "Период 1, фаза 9, заголовок итогов",
+      "text": "Это одна игровая неделя.\n\nЗа неделю: зарабатываешь,\nпланируешь, тратишь, копишь.\nВ конце — подводим итоги.\n\n«Каждую неделю — новый старт.\nПрошлая была не очень?\nСледующая — шанс сделать лучше»\n\nВ конце каждого периода —\nсравниваем план и факт."
+    },
+    {
+      "id": "game_currency",
+      "term": "Игровая валюта",
+      "emoji": "🪙",
+      "trigger": "Период 1, фаза 4, первое получение монет",
+      "text": "Это деньги внутри игры.\n\nМонеты нельзя обменять\nна настоящие деньги.\nОни существуют только здесь.\n\n«Монеты в игре — как деньги\nв жизни. Учишься обращаться здесь\nчтобы уметь это в реальности»\n\nМонеты не настоящие.\nНо навыки — настоящие."
+    },
+    {
+      "id": "investment",
+      "term": "Инвестиция",
+      "emoji": "💡",
+      "trigger": "Период 3, при первом просмотре курса",
+      "text": "Это когда тратишь сейчас —\nчтобы получить больше потом.\n\nКупил курс за 40 монет —\nполучаешь профессию с зарплатой\nна 30 монет больше каждую неделю.\n\n«Однажды я купил учебник.\nСкучно? Да. Но потом я узнал\nкак зарабатывать больше»\n\nИнвестиция окупается не сразу —\nно окупается."
+    },
+    {
+      "id": "passive_income",
+      "term": "Пассивный доход",
+      "emoji": "💰",
+      "trigger": "Период 4, задание F1",
+      "text": "Монеты которые приходят сами —\nбез работы прямо сейчас.\n\nКупил огородик — он приносит\n8 монет каждую неделю.\nТы не работаешь — деньги идут.\n\n«Сначала нужно вложить —\nпотом оно работает само.\nЭто моя любимая механика»\n\nПассивный доход строится\nчерез инвестиции."
+    },
+    {
+      "id": "fraud",
+      "term": "Мошенничество",
+      "emoji": "⚠️",
+      "trigger": "Период 4, задание F2",
+      "text": "Это когда обманывают\nчтобы забрать твои монеты.\n\nПризнаки:\n• «Только сегодня»\n• «Гарантия 100%»\n• «Все уже вложили»\n• Огромная прибыль быстро\n\n«Однажды Хитрик чуть не забрал\nмои монеты. Теперь я знаю\nкак его распознать»\n\nЕсли предложение слишком хорошее —\nскорее всего ловушка."
+    },
+    {
+      "id": "insurance",
+      "term": "Страховка",
+      "emoji": "🛡️",
+      "trigger": "Период 4, при появлении товара item_19",
+      "text": "Ты платишь немного каждую неделю.\nВзамен — защита от больших трат.\n\nБез страховки ремонт — 30 монет.\nСо страховкой — 15 монет.\nСтраховка стоит 15 монет/неделю.\n\n«Страховка — как зонтик.\nНе нужен когда солнце.\nНо если дождь — очень рад\nчто взял с собой»\n\nВыгода зависит от ситуации.\nНо защита — всегда спокойствие."
+    }
+  ],
+  "periods": [
+    {
+      "number": 1,
+      "title": "Первый рабочий день",
+      "start_balance": 0,
+      "pet_stage": "Малыш (СР 0)",
+      "features": {
+        "hitrik": false,
+        "hitrik_note": "не появляется (анонсируется в конце)",
+        "random_events": 0,
+        "rollback": false,
+        "archetype_scales": false,
+        "passive_income": false,
+        "professions": [
+          "artist",
+          "courier",
+          "cook"
+        ],
+        "new_shop_items": [
+          "item_01",
+          "item_02",
+          "item_03",
+          "item_05",
+          "item_06",
+          "item_08"
+        ]
+      },
+      "pet_lines": {
+        "appearance_dialog": [
+          "Привет! Я {имя}. Наконец-то ты меня нашёл",
+          "Я буду жить у тебя. Но честно говоря... я уже немного голодный 🍖",
+          "Чтобы меня кормить — нужны монеты. А монеты надо заработать",
+          "Я знаю как. Я тебя научу — а ты пойдёшь и заработаешь. Договорились?"
+        ],
+        "appearance_button": "Договорились!",
+        "profession_choice_intro": "Сначала выбери работу. У каждой — своя зарплата и своё время. Смотри внимательно",
+        "after_profession_choice_button": "Слушаю",
+        "planning_reminder": "Сначала — план. Помни: сначала решаем, куда пойдут монеты, потом тратим",
+        "shop_intro": "Вот магазин. Здесь купишь всё что мне нужно. Смотри на цены — и не забудь про план",
+        "plan_saved": "Запомни этот план. В конце недели сравним, что вышло",
+        "after_shopping": "Спасибо! Теперь давай отложим немного на мою мечту",
+        "goal_choice_intro": "У меня есть три мечты. Выбери одну — и будем копить вместе",
+        "summary_intro": "Первая неделя позади. Давай посмотрим, что вышло",
+        "plan_vs_fact": {
+          "on_track": "Точно по плану. Это непросто",
+          "under_plan": "Сэкономил. Молодец",
+          "over_plan": "Вышло больше чем планировал. Запомним"
+        },
+        "pet_state": {
+          "all_mandatory": "Сыт, ухожен, доволен. Ты хорошо обо мне позаботился",
+          "two_of_three": "Почти всё хорошо. Не забудь про {пропущенное}",
+          "less_than_two": "Немного грустно. Но первая неделя — всегда сложная"
+        },
+        "dev_score_note": "Финни растёт постепенно — не за одну неделю",
+        "final_variants": {
+          "all_done": "Отличная первая неделя! Ты уже умеешь то, чему я учил",
+          "partial": "Неплохое начало. Кое-что не получилось — и это нормально",
+          "mostly_failed": "Первая неделя бывает сложной. Попробуем ещё раз — вместе"
+        }
+      },
+      "summary_blocks": [
+        "План vs Факт",
+        "Состояние питомца",
+        "Прогресс копилки",
+        "Прогресс развития (СР)",
+        "Итоговая реплика"
+      ],
+      "next_period_teaser": [
+        "🏪 Откроются новые товары",
+        "🦊 Внимание: появится кое-кто хитрый...",
+        "🔄 Появится новая кнопка"
+      ],
+      "next_period_button": "Начать вторую неделю"
+    },
+    {
+      "number": 2,
+      "title": "Хитрик приходит в гости",
+      "start_balance": 0,
+      "start_balance_note": "новая неделя",
+      "pet_stage": "Малыш → возможен переход в Подросток (если СР ≥ 60)",
+      "features": {
+        "hitrik": true,
+        "hitrik_appearances": 2,
+        "random_events": 2,
+        "rollback": true,
+        "rollback_note": "появляется впервые",
+        "archetype_scales": true,
+        "archetype_note": "начинают заполняться",
+        "passive_income": false,
+        "passive_income_note": "предметы ещё не куплены",
+        "professions": [
+          "artist",
+          "courier",
+          "cook"
+        ],
+        "new_shop_items": [
+          "item_04",
+          "item_07",
+          "item_09"
+        ]
+      },
+      "pet_lines": {
+        "tour": [
+          {
+            "icon": "💼 Работа",
+            "line": "Здесь выбираешь профессию. Можно остаться или попробовать новую"
+          },
+          {
+            "icon": "🛒 Магазин",
+            "line": "Здесь покупаешь мне всё нужное. И не только нужное"
+          },
+          {
+            "icon": "📋 Бюджет",
+            "line": "Здесь планируешь, куда пойдут монеты. Сначала — план"
+          },
+          {
+            "icon": "🐷 Копилка",
+            "line": "Здесь живёт моя мечта. Пополняй регулярно"
+          },
+          {
+            "icon": "📊 Прогресс",
+            "line": "Здесь видно как я расту"
+          },
+          {
+            "icon": "📖 Справочник",
+            "line": "Забыл слово — загляни сюда"
+          },
+          {
+            "icon": "❓ Подсказки",
+            "line": "Эта кнопка всегда здесь. Нажми — напомню правила"
+          }
+        ],
+        "profession_change": "Хочешь попробовать другую работу? Или остаться на старой — решать тебе",
+        "profession_change_note": "При смене — сокращённый курс (2 экрана) и собеседование",
+        "planning_reminder": "Помни: сначала — план. До того как идти в магазин",
+        "rollback_intro": "Видишь эту кнопку? Если неделя вышла совсем не так — можно попробовать снова. Но случайное не отменить. Что случилось — то случилось",
+        "summary_outro": "Хитрик придёт снова. Но теперь ты знаешь его трюки"
+      },
+      "summary_checklist": [
+        "Устоял перед Хитриком (оба раза)",
+        "Все обязательные расходы закрыты",
+        "Пополнил копилку",
+        "Выполнил задания"
+      ],
+      "next_period_teaser": [
+        "📚 Можно купить обучающий курс",
+        "⚠️ Что-то может сломаться...",
+        "🆕 Новая корзина в бюджете: Резерв"
+      ]
+    },
+    {
+      "number": 3,
+      "title": "Неожиданный поворот",
+      "start_balance": 0,
+      "start_balance_note": "0 + пассивный доход если есть",
+      "pet_stage": "Малыш или Подросток (если СР ≥ 60)",
+      "features": {
+        "hitrik": true,
+        "hitrik_scheme": "социальное давление («все покупают»)",
+        "random_events": 2,
+        "rollback": true,
+        "rollback_uses": 1,
+        "archetype_scales": true,
+        "archetype_note": "может зафиксироваться впервые",
+        "passive_income": true,
+        "passive_income_note": "от велосипеда если куплен в периоде 2",
+        "new_budget_basket": "reserve",
+        "new_shop_items": [
+          "item_10",
+          "item_11",
+          "item_12",
+          "item_13",
+          "item_14",
+          "item_15"
+        ],
+        "new_professions": [
+          "illustrator",
+          "chef"
+        ]
+      },
+      "pet_lines": {
+        "reserve_intro": "Помнишь — в прошлый раз что-то могло сломаться? Давай добавим ещё одну корзину. На всякий случай",
+        "passive_income_line": "Помнишь велосипед? Он уже работает на тебя",
+        "rollback_line": "Эта неделя была неожиданной. Хочешь попробовать иначе? Но поломка или конкурс — уже история. Откат не вернёт их",
+        "summary_outro": "Неожиданности случаются. Теперь ты знаешь — резерв спасает"
+      },
+      "summary_checklist": [
+        "Справился с непредвиденным",
+        "Сохранил что-то в копилке",
+        "Устоял перед Хитриком",
+        "Выполнил задания"
+      ],
+      "next_period_teaser": [
+        "💰 Монеты начнут работать сами",
+        "🎮 Можно купить консоль",
+        "🛡️ Появится страховка",
+        "⚠️ Хитрик стал умнее..."
+      ]
+    },
+    {
+      "number": 4,
+      "title": "Первые инвестиции",
+      "start_balance": 0,
+      "start_balance_note": "0 + пассивный доход",
+      "pet_stage": "Подросток (если СР ≥ 60)",
+      "features": {
+        "hitrik": true,
+        "hitrik_scheme": "псевдоинвестиция («удвой монеты»)",
+        "random_events": 2,
+        "rollback": true,
+        "archetype_scales": true,
+        "archetype_note": "зафиксирован у большинства, перк активен",
+        "passive_income": true,
+        "new_shop_items": [
+          "item_16",
+          "item_17",
+          "item_18",
+          "item_19"
+        ],
+        "new_professions": [
+          "accountant",
+          "photographer"
+        ],
+        "new_professions_note": "доступны если куплены курсы"
+      },
+      "pet_lines": {
+        "passive_income_line": "Видишь? Твои прошлые решения работают на тебя",
+        "rollback_special_case": "Ребёнок купил дорогой предмет (item_18 за 70 монет) и не хватило на обязательные",
+        "rollback_line": "Большая покупка съела весь бюджет. Хочешь попробовать иначе? Откат поможет — но болезнь или турнир уже случились",
+        "summary_outro": "Монеты могут работать на тебя. Главное — вложить с умом"
+      },
+      "summary_checklist": [
+        "Получил пассивный доход",
+        "Распознал мошенничество Хитрика",
+        "Принял решение об инвестиции",
+        "Выполнил задания"
+      ],
+      "stage_transition": "Если СР ≥ 120: анимация перехода в Профи",
+      "next_period_teaser": null
+    },
+    {
+      "number": 5,
+      "title": "Большой итог",
+      "start_balance": 0,
+      "start_balance_note": "0 + пассивный доход",
+      "pet_stage": "Профи (если СР ≥ 120) или Подросток",
+      "features": {
+        "hitrik": true,
+        "hitrik_scheme": "финальное испытание (все три схемы)",
+        "random_events": 1,
+        "random_events_note": "1 большое событие — ярмарка",
+        "rollback": true,
+        "rollback_note": "последний доступный",
+        "archetype_scales": true,
+        "archetype_note": "финальный, перк на максимуме",
+        "passive_income": true,
+        "new_shop_items": [
+          "item_20",
+          "item_21",
+          "item_22"
+        ],
+        "new_professions": [
+          "photographer",
+          "consultant"
+        ]
+      },
+      "pet_lines": {
+        "passive_income_line": "5 недель решений — и теперь монеты приходят сами. Это твоя работа",
+        "rollback_line": "Это последний шанс попробовать иначе в этом цикле. Ярмарка и Хитрик — уже история. Но всё остальное можно переиграть",
+        "iron_will_bonus": {
+          "title": "🏅 «Железная воля»",
+          "text": "Ты прошёл все 5 недель без единого отката. Ты принял все решения и жил с последствиями.",
+          "reward": "+50 монет + аксессуар «Корона» 👑"
+        },
+        "final_screen_title": "🎊 ПЯТЬ НЕДЕЛЬ ПОЗАДИ!",
+        "final_path": [
+          "Период 1: Первый заработок",
+          "Период 2: Познакомился с Хитриком",
+          "Период 3: Справился с неожиданным",
+          "Период 4: Первые инвестиции",
+          "Период 5: Большой итог"
+        ]
+      },
+      "final_archetype_lines": {
+        "dreamer": "Ты всегда смотришь вперёд. Твоя копилка — доказательство. Продолжай мечтать и копить",
+        "explorer": "Ты не покупаешь не думая. Ты изучаешь и выбираешь лучшее. Хитрик тебя боится",
+        "adventurer": "Ты любишь риск. Это круто — если знаешь когда остановиться. Ты учишься",
+        "responsible": "Я никогда не был голодным пять недель подряд. Это ты. Спасибо",
+        "creator": "Ты сделал меня красивым и нашёл работу по душе. Деньги и творчество — не враги"
+      },
+      "next_period_teaser": null
+    }
+  ]
+}
