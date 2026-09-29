@@ -16,6 +16,7 @@ type mockStore struct {
 	getProfileByDeviceTokenHashFn func(ctx context.Context, hash string) (store.Profile, error)
 	getProfileByLinkCodeFn        func(ctx context.Context, code string) (store.Profile, error)
 	createProfileFn               func(ctx context.Context, hash, name, linkCode string) (store.Profile, error)
+	attachDeviceFn                func(ctx context.Context, linkCode, deviceTokenHash string) (store.Profile, error)
 	updateProfileStateFn          func(ctx context.Context, id string, baseVersion int, state []byte) (store.Profile, error)
 	latestContentBundleFn         func(ctx context.Context) (store.ContentBundle, error)
 	getParentByEmailFn            func(ctx context.Context, email string) (store.Parent, error)
@@ -72,6 +73,13 @@ func (m *mockStore) CreateProfile(ctx context.Context, hash, name, linkCode stri
 		return m.createProfileFn(ctx, hash, name, linkCode)
 	}
 	return store.Profile{}, unimplemented("CreateProfile")
+}
+
+func (m *mockStore) AttachDevice(ctx context.Context, linkCode, deviceTokenHash string) (store.Profile, error) {
+	if m.attachDeviceFn != nil {
+		return m.attachDeviceFn(ctx, linkCode, deviceTokenHash)
+	}
+	return store.Profile{}, unimplemented("AttachDevice")
 }
 
 func (m *mockStore) UpdateProfileState(ctx context.Context, id string, baseVersion int, state []byte) (store.Profile, error) {

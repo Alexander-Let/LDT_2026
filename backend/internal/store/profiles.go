@@ -38,14 +38,38 @@ func (s *Store) GetProfileByID(ctx context.Context, id string) (Profile, error) 
 		`SELECT `+profileColumns+` FROM profiles WHERE id = $1`, id))
 }
 
+// GetProfileByDeviceTokenHash находит профиль по хэшу токена устройства.
+// Токен валиден, если он основной (profiles.device_token_hash) или привязан
+// к профилю через profile_devices (восстановление на другом устройстве).
 func (s *Store) GetProfileByDeviceTokenHash(ctx context.Context, hash string) (Profile, error) {
 	return scanProfile(s.pool.QueryRow(ctx,
-		`SELECT `+profileColumns+` FROM profiles WHERE device_token_hash = $1`, hash))
+		`SELECT `+profileColumns+` FROM profiles p
+		 WHERE p.device_token_hash = $1
+		    OR EXISTS (SELECT 1 FROM profile_devices d
+		               WHERE d.profile_id = p.id AND d.device_token_hash = $1)`, hash))
 }
 
 func (s *Store) GetProfileByLinkCode(ctx context.Context, code string) (Profile, error) {
 	return scanProfile(s.pool.QueryRow(ctx,
 		`SELECT `+profileColumns+` FROM profiles WHERE upper(link_code) = upper($1)`, code))
+}
+
+// AttachDevice привязывает device_token_hash к профилю с кодом linkCode
+// (восстановление прогресса на другом устройстве). Код сравнивается без
+// учёта регистра. Повторная привязка того же токена идемпотентна
+// (ON CONFLICT DO NOTHING). Если профиль с таким кодом не найден — ErrNotFound.
+func (s *Store) AttachDevice(ctx context.Context, linkCode, deviceTokenHash string) (Profile, error) {
+	p, err := s.GetProfileByLinkCode(ctx, linkCode)
+	if err != nil {
+		return Profile{}, err
+	}
+	if _, err := s.pool.Exec(ctx,
+		`INSERT INTO profile_devices (profile_id, device_token_hash)
+		 VALUES ($1, $2)
+		 ON CONFLICT (device_token_hash) DO NOTHING`, p.ID, deviceTokenHash); err != nil {
+		return Profile{}, err
+	}
+	return p, nil
 }
 
 // CreateProfile вставляет новый профиль. При конфликте уникальности

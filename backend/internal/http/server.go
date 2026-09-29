@@ -20,6 +20,7 @@ type Store interface {
 	GetProfileByDeviceTokenHash(ctx context.Context, hash string) (store.Profile, error)
 	GetProfileByLinkCode(ctx context.Context, code string) (store.Profile, error)
 	CreateProfile(ctx context.Context, deviceTokenHash, displayName, linkCode string) (store.Profile, error)
+	AttachDevice(ctx context.Context, linkCode, deviceTokenHash string) (store.Profile, error)
 	UpdateProfileState(ctx context.Context, id string, baseVersion int, state []byte) (store.Profile, error)
 
 	LatestContentBundle(ctx context.Context) (store.ContentBundle, error)
@@ -48,7 +49,9 @@ type handler struct {
 	appEnv string
 }
 
-func NewRouter(db Store, logger *slog.Logger, appEnv string) *gin.Engine {
+// newEngine собирает базовый gin-движок: recovery, логирование запросов,
+// healthz/readyz. Общая основа монолита (NewRouter) и доменных сервисов.
+func newEngine(db Store, logger *slog.Logger, appEnv string) (*gin.Engine, *handler) {
 	if appEnv == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -62,10 +65,19 @@ func NewRouter(db Store, logger *slog.Logger, appEnv string) *gin.Engine {
 	r.GET("/healthz", healthz)
 	r.GET("/readyz", readyz(db))
 
+	return r, h
+}
+
+// NewRouter — монолит: все домены в одном процессе (локальная разработка).
+func NewRouter(db Store, logger *slog.Logger, appEnv string) *gin.Engine {
+	r, h := newEngine(db, logger, appEnv)
+
 	v1 := r.Group("/v1")
 
-	// Детский профиль: регистрация открытая, остальное — по токену устройства.
+	// Детский профиль: регистрация и привязка устройства открытые,
+	// остальное — по токену устройства.
 	v1.POST("/profiles", h.createProfile)
+	v1.POST("/profiles/attach", h.attachDevice)
 
 	child := v1.Group("", h.childAuth())
 	child.GET("/profiles/me", h.getMyProfile)
@@ -76,6 +88,53 @@ func NewRouter(db Store, logger *slog.Logger, appEnv string) *gin.Engine {
 	child.GET("/content/bundle", h.getContentBundle)
 
 	// Родитель: вход по одноразовому коду, остальное — по токену сессии.
+	v1.POST("/parents/otp", h.requestParentOTP)
+	v1.POST("/parents/session", h.createParentSession)
+
+	parent := v1.Group("/parents", h.parentAuth())
+	parent.POST("/links", h.createParentLink)
+	parent.GET("/children", h.listChildren)
+	parent.GET("/children/:profile_id/summary", h.getChildSummary)
+	parent.POST("/children/:profile_id/bonuses", h.createChildBonus)
+
+	return r
+}
+
+// NewProfilesRouter — сервис детских профилей: регистрация, привязка
+// устройств по link_code, игровое состояние, детские бонусы.
+func NewProfilesRouter(db Store, logger *slog.Logger, appEnv string) *gin.Engine {
+	r, h := newEngine(db, logger, appEnv)
+
+	v1 := r.Group("/v1")
+	v1.POST("/profiles", h.createProfile)
+	v1.POST("/profiles/attach", h.attachDevice)
+
+	child := v1.Group("", h.childAuth())
+	child.GET("/profiles/me", h.getMyProfile)
+	child.GET("/profiles/me/state", h.getMyState)
+	child.PUT("/profiles/me/state", h.putMyState)
+	child.GET("/profiles/me/bonuses", h.listMyBonuses)
+	child.POST("/profiles/me/bonuses/:id/applied", h.applyMyBonus)
+
+	return r
+}
+
+// NewContentRouter — сервис учебного контента: выдача последнего бандла.
+func NewContentRouter(db Store, logger *slog.Logger, appEnv string) *gin.Engine {
+	r, h := newEngine(db, logger, appEnv)
+
+	child := r.Group("/v1", h.childAuth())
+	child.GET("/content/bundle", h.getContentBundle)
+
+	return r
+}
+
+// NewParentsRouter — сервис родительского раздела: OTP-вход, привязка
+// по link_code, сводки прогресса, начисление бонусов.
+func NewParentsRouter(db Store, logger *slog.Logger, appEnv string) *gin.Engine {
+	r, h := newEngine(db, logger, appEnv)
+
+	v1 := r.Group("/v1")
 	v1.POST("/parents/otp", h.requestParentOTP)
 	v1.POST("/parents/session", h.createParentSession)
 

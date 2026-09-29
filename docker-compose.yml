@@ -27,21 +27,70 @@ services:
       db:
         condition: service_healthy
 
-  server:
+  profiles:
     build: ./backend
     image: finni-backend:dev
+    command: ["/app/profiles"]
     environment:
-      HTTP_ADDR: ":8080"
+      HTTP_ADDR: ":8081"
       DATABASE_URL: postgres://${POSTGRES_USER:-finni}:${POSTGRES_PASSWORD:-finni}@db:5432/${POSTGRES_DB:-finni}?sslmode=disable
       APP_ENV: ${APP_ENV:-dev}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+
+  content:
+    build: ./backend
+    image: finni-backend:dev
+    command: ["/app/content"]
+    environment:
+      HTTP_ADDR: ":8082"
+      DATABASE_URL: postgres://${POSTGRES_USER:-finni}:${POSTGRES_PASSWORD:-finni}@db:5432/${POSTGRES_DB:-finni}?sslmode=disable
+      APP_ENV: ${APP_ENV:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  parents:
+    build: ./backend
+    image: finni-backend:dev
+    command: ["/app/parents"]
+    environment:
+      HTTP_ADDR: ":8083"
+      DATABASE_URL: postgres://${POSTGRES_USER:-finni}:${POSTGRES_PASSWORD:-finni}@db:5432/${POSTGRES_DB:-finni}?sslmode=disable
+      APP_ENV: ${APP_ENV:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  gateway:
+    build: ./backend
+    image: finni-backend:dev
+    command: ["/app/gateway"]
+    environment:
+      HTTP_ADDR: ":8080"
+      PROFILES_URL: http://profiles:8081
+      CONTENT_URL: http://content:8082
+      PARENTS_URL: http://parents:8083
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8080:8080"
+    depends_on:
+      profiles:
+        condition: service_started
+      content:
+        condition: service_started
+      parents:
+        condition: service_started
 
 volumes:
   db-data:

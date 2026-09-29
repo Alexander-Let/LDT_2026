@@ -90,7 +90,7 @@ paths:
         Регистрация устройства. Если SHA-256-хэш `device_token` уже есть в базе,
         возвращается существующий профиль со статусом 200, иначе создаётся
         новый — 201. При создании генерируется `link_code` (6 символов,
-        без 0/O/1/I) для привязки родителя.
+        без 0/O/1/I) для привязки родителя и других устройств ребёнка.
       operationId: createProfile
       requestBody:
         required: true
@@ -125,6 +125,56 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ProfileIdentity" }
         "400": { $ref: "#/components/responses/BadRequest" }
+
+  /v1/profiles/attach:
+    post:
+      tags: [profiles]
+      summary: Привязать устройство к существующему профилю по link_code
+      description: |
+        Восстановление прогресса на другом устройстве: ребёнок вводит `link_code`
+        со старого устройства, и `device_token` нового устройства привязывается
+        к существующему профилю. Дальше все детские эндпоинты доступны с новым
+        токеном, `GET /v1/profiles/me/state` отдаёт сохранённое состояние.
+        Идемпотентно — повторная привязка того же токена возвращает 200.
+        Код сравнивается без учёта регистра.
+      operationId: attachDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_token, link_code]
+              properties:
+                device_token:
+                  type: string
+                  minLength: 16
+                  maxLength: 256
+                  description: Токен нового устройства; на сервере хранится только SHA-256-хэш.
+                link_code:
+                  type: string
+                  minLength: 6
+                  maxLength: 6
+                  example: "K7M2QN"
+            example:
+              device_token: "b3f1c9a2d4e6..."
+              link_code: "K7M2QN"
+      responses:
+        "200":
+          description: Устройство привязано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile_id: { type: string, format: uuid }
+                  display_name: { type: string }
+                  link_code: { type: string, example: "K7M2QN" }
+                  has_state:
+                    type: boolean
+                    description: Есть ли у профиля сохранённое игровое состояние.
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /v1/profiles/me:
     get:

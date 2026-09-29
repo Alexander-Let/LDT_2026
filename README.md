@@ -13,6 +13,35 @@
 - Конфигурация — только через переменные окружения (см. `backend/.env.example`)
 - Контракт API — OpenAPI 3: [`backend/api/openapi.yaml`](backend/api/openapi.yaml)
 
+## Архитектура
+
+Один Go-модуль, одна база PostgreSQL, четыре HTTP-процесса плюс шлюз:
+
+```
+                 ┌────────────┐
+                 │  gateway   │ :8080 — единственный наружу (reverse proxy, stdlib)
+                 └─────┬──────┘
+       /v1/parents/   │   /v1/content/      остальное (/v1/profiles*, /healthz, /readyz)
+              ┌───────┴───────────┬─────────────────────────┐
+              ▼                   ▼                         ▼
+         parents :8083      content :8082             profiles :8081
+         /v1/parents/*      /v1/content/bundle        /v1/profiles*, state, бонусы
+              └───────────────────┴─────────────────────────┘
+                                  ▼
+                       PostgreSQL 16 (общая база, миграции goose — сервис migrate)
+```
+
+- Каждый доменный сервис — отдельный бинарник из `cmd/` (`profiles`, `content`,
+  `parents`, `gateway`), собранный из одного Dockerfile; все хендлеры живут
+  в `internal/http`, роуты по доменам собирают `NewProfilesRouter`,
+  `NewContentRouter`, `NewParentsRouter` (монолитный `NewRouter` сохранён
+  для локальной разработки через `cmd/server`).
+- Порты 8081–8083 доступны только внутри сети compose; снаружи — только
+  gateway на 8080. Адреса апстримов gateway задаются env `PROFILES_URL`,
+  `CONTENT_URL`, `PARENTS_URL` (по умолчанию `http://localhost:8081`–`8083`).
+- Каждый сервис отвечает `/healthz`; `/readyz` проверяет пинг БД. Gateway
+  проксирует оба пути на profiles.
+
 ## Быстрый запуск
 
 Требуется Docker с Compose.
@@ -21,8 +50,9 @@
 docker compose up --build
 ```
 
-Поднимаются три сервиса: `db` (PostgreSQL), `migrate` (миграции goose) и
-`server` (HTTP API на порту 8080). Проверка:
+Поднимаются шесть сервисов: `db` (PostgreSQL), `migrate` (миграции goose),
+`profiles`, `content`, `parents` и `gateway` (единая точка входа на порту
+8080). Проверка:
 
 ```bash
 curl http://localhost:8080/healthz   # {"status":"ok"}
@@ -38,8 +68,12 @@ cd backend
 cp .env.example .env   # и заполнить DATABASE_URL своим PostgreSQL
 go test ./...
 go run ./cmd/migrate
-go run ./cmd/server
+go run ./cmd/server    # монолит на :8080 со всеми доменами
 ```
+
+Доменные сервисы без Docker запускаются по одному (каждому — свой порт через
+`HTTP_ADDR`, например `HTTP_ADDR=:8081 go run ./cmd/profiles`), gateway —
+`go run ./cmd/gateway`.
 
 Тесты не требуют базы данных. Интеграционный тест store пропускается,
 пока не задан `DATABASE_URL` (`go test -short` тоже его пропускает).
@@ -50,6 +84,9 @@ go run ./cmd/server
 
 - **Ребёнок** — `Authorization: Bearer <device_token>`. Клиент один раз
   генерирует случайную строку; на сервере хранится только её SHA-256-хэш.
+  К одному профилю можно привязать несколько устройств: на новом устройстве
+  ребёнок вводит `link_code` через `POST /v1/profiles/attach`, и новый
+  токен открывает тот же профиль (таблица `profile_devices`).
 - **Родитель** — `Authorization: Bearer <parent_token>`. Вход по одноразовому
   6-значному коду (OTP): `POST /v1/parents/otp` → `POST /v1/parents/session`.
   Токен сессии живёт 30 дней, в базе — только хэш. Единственные ПДн в системе —
@@ -75,6 +112,7 @@ go run ./cmd/server
 | GET | `/healthz` | — | живость процесса |
 | GET | `/readyz` | — | готовность (пинг БД) |
 | POST | `/v1/profiles` | открыт | создать профиль (идемпотентно: 200 если токен уже есть, 201 если создан) |
+| POST | `/v1/profiles/attach` | открыт | привязать устройство к профилю по `link_code` (идемпотентно; восстановление на другом устройстве) |
 | GET | `/v1/profiles/me` | ребёнок | профиль: имя, link_code, версия состояния |
 | GET | `/v1/profiles/me/state` | ребёнок | игровое состояние `{state, state_version, updated_at}` |
 | PUT | `/v1/profiles/me/state` | ребёнок | сохранить состояние; 409 + `current_version`/`current_state` при конфликте версий |
@@ -139,6 +177,13 @@ curl -X POST $BASE/v1/parents/children/<profile_id>/bonuses \
 curl $BASE/v1/profiles/me/bonuses -H 'Authorization: Bearer my-secret-device-token-0123456789'
 curl -X POST $BASE/v1/profiles/me/bonuses/<id>/applied \
   -H 'Authorization: Bearer my-secret-device-token-0123456789'
+
+# 11. Ребёнок на НОВОМ устройстве: привязка по link_code из шага 1
+curl -X POST $BASE/v1/profiles/attach -H 'Content-Type: application/json' \
+  -d '{"device_token":"another-device-token-0123456789","link_code":"K7M2QN"}'
+# => {"profile_id":"...","display_name":"Финни","link_code":"K7M2QN","has_state":true}
+# Дальше новый токен работает с тем же профилем:
+curl $BASE/v1/profiles/me/state -H 'Authorization: Bearer another-device-token-0123456789'
 ```
 
 ## Контракт контента (payload бандла, schema=1)
@@ -180,16 +225,20 @@ curl -X POST $BASE/v1/profiles/me/bonuses/<id>/applied \
 ```
 ├── backend/
 │   ├── cmd/
-│   │   ├── server/      # HTTP-сервис
-│   │   └── migrate/     # применение миграций goose
+│   │   ├── server/      # монолитный HTTP-сервис (локальная разработка)
+│   │   ├── migrate/     # применение миграций goose
+│   │   ├── profiles/    # сервис детских профилей (:8081)
+│   │   ├── content/     # сервис учебного контента (:8082)
+│   │   ├── parents/     # сервис родительского раздела (:8083)
+│   │   └── gateway/     # reverse proxy, единая точка входа (:8080)
 │   ├── api/             # спецификация OpenAPI 3
 │   ├── internal/
 │   │   ├── config/      # конфигурация из env
-│   │   ├── http/        # роутер, middleware, хендлеры, формат ошибок
+│   │   ├── http/        # роутеры (монолит + по доменам), middleware, хендлеры
 │   │   └── store/       # доступ к PostgreSQL (pgx)
 │   ├── migrations/      # SQL-миграции (встраиваются в бинарник)
-│   ├── Dockerfile
+│   ├── Dockerfile       # один образ на все сервисы (command-override в compose)
 │   └── .env.example
-├── docker-compose.yml   # postgres + migrate + server, запуск одной командой
+├── docker-compose.yml   # db + migrate + profiles + content + parents + gateway
 └── docs/                # документация (структура данных, матрица ТЗ, тест-кейсы)
 ```

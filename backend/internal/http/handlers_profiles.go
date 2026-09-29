@@ -117,6 +117,55 @@ func profileIdentityResponse(p store.Profile) gin.H {
 	}
 }
 
+type attachDeviceRequest struct {
+	DeviceToken string `json:"device_token"`
+	LinkCode    string `json:"link_code"`
+}
+
+// attachDevice — POST /v1/profiles/attach. Открытый эндпоинт: ребёнок на новом
+// устройстве вводит link_code, и его device_token привязывается к существующему
+// профилю — дальше все детские эндпоинты работают с новым токеном.
+// Идемпотентен: повторная привязка того же токена возвращает 200.
+func (h *handler) attachDevice(c *gin.Context) {
+	var req attachDeviceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, "тело запроса должно быть JSON с полями device_token и link_code")
+		return
+	}
+	req.LinkCode = strings.TrimSpace(req.LinkCode)
+	if l := len(req.DeviceToken); l < minDeviceTokenLen || l > maxDeviceTokenLen {
+		writeBadRequest(c, fmt.Sprintf("device_token: длина от %d до %d символов", minDeviceTokenLen, maxDeviceTokenLen))
+		return
+	}
+	if utf8.RuneCountInString(req.LinkCode) != linkCodeLength {
+		writeBadRequest(c, "link_code: код из 6 символов")
+		return
+	}
+
+	profile, err := h.store.AttachDevice(c.Request.Context(), req.LinkCode, sha256Hex(req.DeviceToken))
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			writeNotFound(c, "профиль с таким кодом не найден")
+			return
+		}
+		writeInternalError(c, h.logger, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"profile_id":   profile.ID,
+		"display_name": profile.DisplayName,
+		"link_code":    profile.LinkCode,
+		"has_state":    hasSavedState(profile.State),
+	})
+}
+
+// hasSavedState — true, если у профиля есть непустое сохранённое состояние
+// (в базе state jsonb NOT NULL DEFAULT '{}' — «пусто» это '{}').
+func hasSavedState(state []byte) bool {
+	trimmed := bytes.TrimSpace(state)
+	return len(trimmed) > 0 && string(trimmed) != "{}"
+}
+
 // getMyProfile — GET /v1/profiles/me.
 func (h *handler) getMyProfile(c *gin.Context) {
 	p := profileFromContext(c)
