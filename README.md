@@ -11,6 +11,39 @@
   жюри. Документация: [docs/PROJECT.md](docs/PROJECT.md).
 - `backend/` — серверная часть (Go-микросервисы + PostgreSQL), описана ниже.
 
+## Сборка всего проекта
+
+**Мобильное приложение (APK):**
+
+```bash
+cd mobile
+flutter pub get
+flutter analyze          # проверка, 0 issues
+flutter test             # 61 тест
+flutter build apk --release
+# => mobile/build/app/outputs/flutter-apk/app-release.apk
+```
+
+Требуется Flutter 3.47.5 (stable), JDK 17+, Android SDK. Файл
+`android/local.properties` в git не коммитится — на новой машине создать
+с путями `sdk.dir` и `flutter.sdk` (Flutter обычно генерирует его сам при
+первом `flutter build`).
+
+**Сборка в CI:** репозиторий содержит GitHub Action
+(`.github/workflows/android-apk.yml`) — по пушу тега `v*` (например
+`git tag v1.0.1 && git push origin v1.0.1`) собирается release APK и
+прикрепляется к GitHub Release этого тега. APK также доступен как artifact
+прогона во вкладке Actions.
+
+**Бэкенд (целиком, одна команда):**
+
+```bash
+docker compose up --build   # db + migrate + profiles + content + parents + gateway (:8080)
+```
+
+Проверка: `curl http://localhost:8080/healthz` → `{"status":"ok"}`.
+Подробности — в разделе «Быстрый запуск» ниже.
+
 ## Backend
 
 Бэкенд — опциональный сервис в local-first архитектуре: игровой цикл полностью
